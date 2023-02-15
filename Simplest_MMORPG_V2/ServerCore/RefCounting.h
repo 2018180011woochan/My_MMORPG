@@ -35,7 +35,7 @@ public:
 	// 복사
 	TSharedPtr(const TSharedPtr& rhs) { Set(rhs._ptr); }
 	// 이동
-	TSharedPtr(const TSharedPtr& rhs) { _ptr = rhs._ptr; rhs._ptr = nullptr; }
+	//TSharedPtr(const TSharedPtr& rhs) { _ptr = rhs._ptr; rhs._ptr = nullptr; }
 	// 상속 관계 복사
 	template<typename U>
 	TSharedPtr(const TSharedPtr<U>& rhs) { Set(static_cast<T*>(rhs._ptr)); }

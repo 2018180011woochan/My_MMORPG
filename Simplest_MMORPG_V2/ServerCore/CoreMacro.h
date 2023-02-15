@@ -6,3 +6,12 @@
 #define READ_LOCK				READ_LOCK_IDX(0)
 #define WRITE_LOCK_IDX(idx)		WriteLockGuard writeLockGuard_##idx(_locks[idx])
 #define WRITE_LOCK				WRITE_LOCK_IDX(0)
+
+//// Memory
+//#ifdef _DEBUG
+//#define xalloc(size)		BaseAllocator::Alloc(size)
+//#define xrelease(ptr)		BaseAllocator::Release(ptr)
+//#else
+//#define xalloc(size)		BaseAllocator::Alloc(size)
+//#define xrelease(ptr)		BaseAllocator::Release(ptr)
+//#endif 

@@ -339,6 +339,7 @@
 #include <mutex>
 #include <Windows.h>
 #include "ThreadManager.h"
+#include "memory.h"
 
 int main()
 {
