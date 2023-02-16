@@ -51,10 +51,10 @@
     <ClInclude Include="Memory.h">
       <Filter>Memory</Filter>
     </ClInclude>
-    <ClInclude Include="NetworkAddress.h">
+    <ClInclude Include="SocketUtils.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="SocketUtils.h">
+    <ClInclude Include="NetAddress.h">
       <Filter>Network</Filter>
     </ClInclude>
   </ItemGroup>
@@ -86,10 +86,10 @@
     <ClCompile Include="Memory.cpp">
       <Filter>Memory</Filter>
     </ClCompile>
-    <ClCompile Include="NetworkAddress.cpp">
+    <ClCompile Include="SocketUtils.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="SocketUtils.cpp">
+    <ClCompile Include="NetAddress.cpp">
       <Filter>Network</Filter>
     </ClCompile>
   </ItemGroup>

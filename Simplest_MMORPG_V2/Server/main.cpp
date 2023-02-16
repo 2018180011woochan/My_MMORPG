@@ -341,8 +341,18 @@
 #include "ThreadManager.h"
 #include "memory.h"
 
+#include "SocketUtils.h"
+
 int main()
 {
+	SOCKET socket = SocketUtils::CreateSocket();
 
+	SocketUtils::BindAnyAddress(socket, 7777);
+
+	SocketUtils::Listen(socket);
+
+	::accept(socket, nullptr, nullptr);
+
+	cout << "client connect!" << endl;
 
 }
