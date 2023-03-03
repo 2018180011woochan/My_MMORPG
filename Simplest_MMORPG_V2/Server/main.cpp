@@ -341,14 +341,25 @@
 #include "ThreadManager.h"
 #include "memory.h"
 
-#include "SocketUtils.h"
-#include "Listener.h"
+#include "Service.h"
+#include "Session.h"
+
+class GameSession : public Session
+{
+
+};
 
 int main()
 {
-	ListenerRef listener = make_shared<Listener>();
-	listener->StartAccept(NetAddress(L"127.0.0.1", 7777));
+	ServerServiceRef service = MakeShared<ServerService>(
+		NetAddress(L"127.0.0.1", 7777),
+		MakeShared<IocpCore>(),
+		MakeShared<GameSession>,
+		100 /*동접*/ );
 
+	service->Start();
+	// 이런식으로 서비스 만들어서 스타트 때리면 알아서 붙는다
+	
 	// 스레드 개수는 코어 개수~ 코어개수1.5배
 	for (int32 i = 0; i < 5; ++i)
 	{
@@ -356,7 +367,7 @@ int main()
 			{
 				while (true)
 				{
-					GIocpCore.Dispatch();
+					service->GetIocpCore()->Dispatch();
 				}
 			});
 	}

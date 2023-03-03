@@ -49,3 +49,26 @@ protected:
 	SessionFactory _sessionFactory;
 };
 
+// ClientService
+class ClientService : public Service
+{
+public:
+	ClientService(NetAddress targetAddress, IocpCoreRef core, SessionFactory factory, int32 maxSessionCount = 1);
+	virtual ~ClientService() {}
+
+	virtual bool Start() override;
+};
+
+// ServerService
+class ServerService : public Service
+{
+public:
+	ServerService(NetAddress Address, IocpCoreRef core, SessionFactory factory, int32 maxSessionCount = 1);
+	virtual ~ServerService() {}
+
+	virtual bool Start() override;
+	virtual void CloseService() override;
+
+private:
+	ListenerRef _listener = nullptr;
+};

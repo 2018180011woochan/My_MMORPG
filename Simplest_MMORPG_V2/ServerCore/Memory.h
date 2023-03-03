@@ -21,3 +21,8 @@ void xdelete(Type* obj)
 	BaseAllocator::Release(obj);	// 메모리를 반납
 }
 
+template<typename Type, typename... Args>
+shared_ptr<Type> MakeShared(Args&&... args)
+{
+	return shared_ptr<Type> { xnew<Type>(forward<Args>(args)...), xdelete<Type> };
+}

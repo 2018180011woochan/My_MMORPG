@@ -19,7 +19,7 @@ public:
 	HANDLE GetHandle() { return _iocpHandle; }
 
 	// 소켓을 만들면 iocp에 등록해주는 함수
-	bool Register(class IocpObject* iocpObject);
+	bool Register(IocpObjectRef iocpObject);
 	// 워커 스레드들이 iocp에 일감이 없나 두리번거리는 함수
 	bool Dispatch(uint32 timeoutMs = INFINITE);
 
@@ -27,5 +27,3 @@ private:
 	HANDLE _iocpHandle;
 };
 
-// TEMP
-extern IocpCore GIocpCore;
