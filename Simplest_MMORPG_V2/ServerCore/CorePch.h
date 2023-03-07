@@ -24,7 +24,7 @@ using namespace std;
 #pragma comment(lib, "ws2_32.lib")
 
 #include "Lock.h"
-
+#include "Memory.h"
 // 서버코어 내부에서 활용함, 게임서버나 클라이언트에서 참조하길 원하는 내용들
 
 

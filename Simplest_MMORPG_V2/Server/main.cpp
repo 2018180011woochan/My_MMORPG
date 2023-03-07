@@ -334,10 +334,6 @@
 
 #include "pch.h"
 #include <iostream>
-#include "CorePch.h"
-#include <atomic>
-#include <mutex>
-#include <Windows.h>
 #include "ThreadManager.h"
 #include "memory.h"
 
@@ -347,6 +343,11 @@
 class GameSession : public Session
 {
 public:
+	~GameSession()
+	{
+		cout << "~ServerSession" << endl;
+	}
+
 	virtual int32 OnRecv(BYTE* buffer, int32 len) override
 	{
 		//Echo
