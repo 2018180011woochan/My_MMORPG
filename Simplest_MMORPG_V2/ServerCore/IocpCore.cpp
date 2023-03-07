@@ -46,7 +46,6 @@ bool IocpCore::Dispatch(uint32 timeoutMs)
 			break;
 		}
 	}
-		cout << "error" << endl;
 
 	return false;
 }

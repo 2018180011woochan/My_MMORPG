@@ -41,8 +41,8 @@ private:
 	void RegisterSend();
 
 	void ProcessConnect();
-	void ProcessRecv(int32 nomOfBytes);
-	void ProcessSend(int32 nomOfBytes);
+	void ProcessRecv(int32 numOfBytes);
+	void ProcessSend(int32 numOfBytes);
 
 	void HandleError(int32 errorCode);
 
