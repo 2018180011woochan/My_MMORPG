@@ -352,7 +352,11 @@ public:
 	{
 		//Echo
 		cout << "OnRecv Len = " << len << endl;
-		Send(buffer, len);
+
+		SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
+		sendBuffer->CopyData(buffer, len);
+
+		Send(sendBuffer);
 		return len;
 	}
 

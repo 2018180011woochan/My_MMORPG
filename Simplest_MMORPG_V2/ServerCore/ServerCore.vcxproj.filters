@@ -75,6 +75,9 @@
     <ClInclude Include="RecvBuffer.h">
       <Filter>Network</Filter>
     </ClInclude>
+    <ClInclude Include="SendBuffer.h">
+      <Filter>Network</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CorePch.cpp">
@@ -126,6 +129,9 @@
       <Filter>Network</Filter>
     </ClCompile>
     <ClCompile Include="RecvBuffer.cpp">
+      <Filter>Network</Filter>
+    </ClCompile>
+    <ClCompile Include="SendBuffer.cpp">
       <Filter>Network</Filter>
     </ClCompile>
   </ItemGroup>
