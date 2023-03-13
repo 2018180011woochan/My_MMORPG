@@ -344,10 +344,12 @@
 #include "BufferWriter.h"
 #include "ServerPacketHandler.h"
 
+#include "protocol.h"
+
 int main()
 {
 	ServerServiceRef service = MakeShared<ServerService>(
-		NetAddress(L"127.0.0.1", 7777),
+		NetAddress(L"127.0.0.1", PORT_NUM),
 		MakeShared<IocpCore>(),
 		MakeShared<GameSession>,
 		100 /*동접*/ );
@@ -366,13 +368,13 @@ int main()
 				}
 			});
 	}
-	char sendData[] = "가";
+
 	WCHAR sendData3[] = L"가";
 
 	while(true) 
 	{
 		vector<BuffData> buffs{ BuffData {100, 1.5f}, BuffData {200, 2.3f}, BuffData {300, 7.5f} };
-		SendBufferRef sendBuffer = ServerPacketHandler::Make_S_TEST(1001, 100, 10, buffs);
+		SendBufferRef sendBuffer = ServerPacketHandler::Make_S_TEST(1001, 100, 10, buffs, L"김우찬");
 
 		GSessionManager.Broadcast(sendBuffer);
 

@@ -71,22 +71,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(VC_IncludePath);$(SolutionDir)..\ServerCore\;$(WindowsSDK_IncludePath);include\</IncludePath>
-    <LibraryPath>$(SolutionDir)..\Libraries\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\KWC\Desktop\Simplest_MMORPG\Simplest_MMORPG_V2\client_sample\client_sample\lib;$(SolutionDir)..\Libraries\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\Binary\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(VC_IncludePath);$(SolutionDir)..\ServerCore\;$(WindowsSDK_IncludePath);include\</IncludePath>
-    <LibraryPath>$(SolutionDir)..\Libraries\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\KWC\Desktop\Simplest_MMORPG\Simplest_MMORPG_V2\client_sample\client_sample\lib;$(SolutionDir)..\Libraries\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\Binary\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(VC_IncludePath);$(SolutionDir)..\ServerCore\;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)..\Libraries\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\KWC\Desktop\Simplest_MMORPG\Simplest_MMORPG_V2\client_sample\client_sample\lib;$(SolutionDir)..\Libraries\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\Binary\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(VC_IncludePath);$(SolutionDir)..\ServerCore\;$(WindowsSDK_IncludePath);</IncludePath>
-    <LibraryPath>$(SolutionDir)..\Libraries\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\Users\KWC\Desktop\Simplest_MMORPG\Simplest_MMORPG_V2\client_sample\client_sample\lib;$(SolutionDir)..\Libraries\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)..\Binary\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -144,11 +144,18 @@
   <ItemGroup>
     <ClCompile Include="client.cpp" />
     <ClCompile Include="ClientPacketHandler.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="소스.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -158,6 +165,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\Server\protocol.h" />
     <ClInclude Include="ClientPacketHandler.h" />
+    <ClInclude Include="global.h" />
     <ClInclude Include="include\SFML\Config.hpp" />
     <ClInclude Include="include\SFML\Graphics.hpp" />
     <ClInclude Include="include\SFML\Graphics\BlendMode.hpp" />
@@ -237,6 +245,7 @@
     <ClInclude Include="include\SFML\Window\Window.hpp" />
     <ClInclude Include="include\SFML\Window\WindowHandle.hpp" />
     <ClInclude Include="include\SFML\Window\WindowStyle.hpp" />
+    <ClInclude Include="Object.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>

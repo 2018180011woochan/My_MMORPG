@@ -20,6 +20,12 @@
     <Filter Include="Main">
       <UniqueIdentifier>{24545a12-ec0b-42c3-a6d6-84512966ef54}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Object">
+      <UniqueIdentifier>{894140a6-f6db-4354-91be-b2c431c2df6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Default">
+      <UniqueIdentifier>{d4006ab3-a9a5-476a-aaba-35115c39877d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -30,6 +36,12 @@
     </ClCompile>
     <ClCompile Include="ClientPacketHandler.cpp">
       <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="소스.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
+    <ClCompile Include="Object.cpp">
+      <Filter>Object</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -286,6 +298,12 @@
     </ClInclude>
     <ClInclude Include="..\..\Server\protocol.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>Object</Filter>
+    </ClInclude>
+    <ClInclude Include="global.h">
+      <Filter>Default</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
