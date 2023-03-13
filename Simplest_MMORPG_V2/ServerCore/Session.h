@@ -95,3 +95,25 @@ private:
 	SendEvent _sendEvent;
 };
 
+// PacketSession
+
+struct PacketHeader
+{
+	uint16 size;
+	uint16 id;		// 프로토콜ID (1=로그인 2=이동 이런식)
+};
+
+class PacketSession : public Session
+{
+public:
+	PacketSession();
+	virtual ~PacketSession();
+
+	PacketSessionRef GetPacketSessionRef() { return static_pointer_cast<PacketSession>(shared_from_this()); }
+
+protected:
+	// 컨텐츠에서 패킷세션을 상속받은애는 OnRecv를 사용할 수 없고
+	// OnRecvPacket을 오버라이딩해서 사용하게 한다
+	virtual int32 OnRecv(BYTE* buffer, int32 len) sealed;
+	virtual int32 OnRecvPacket(BYTE* buffer, int32 len) abstract;
+};

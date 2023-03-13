@@ -339,33 +339,9 @@
 
 #include "Service.h"
 #include "Session.h"
-
-class GameSession : public Session
-{
-public:
-	~GameSession()
-	{
-		cout << "~ServerSession" << endl;
-	}
-
-	virtual int32 OnRecv(BYTE* buffer, int32 len) override
-	{
-		//Echo
-		cout << "OnRecv Len = " << len << endl;
-
-		SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
-		sendBuffer->CopyData(buffer, len);
-
-		Send(sendBuffer);
-		return len;
-	}
-
-	virtual void OnSend(int32 len) override 
-	{
-		cout << "OnSend Len = " << len << endl;
-
-	}
-};
+#include "GameSession.h"
+#include "GameSessionManager.h"
+#include "BufferWriter.h"
 
 int main()
 {
@@ -388,6 +364,33 @@ int main()
 					service->GetIocpCore()->Dispatch();
 				}
 			});
+	}
+	char sendData[] = "HelloWorld";
+	while(true) 
+	{
+		SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
+
+		BufferWriter bw(sendBuffer->Buffer(), 4096);
+
+		PacketHeader* header = bw.Reserve<PacketHeader>();
+
+		// id(uint64) 체력(uint32) 공격력(uint16)
+		// 가변적
+		bw << (uint64)1001 << (uint32)100 << (uint16)10;
+		
+		// 크기를 알때
+		bw.Write(sendData, sizeof(sendData));
+
+		header->size = bw.WriteSize();
+		header->id = 1;	// 1 : hello message
+
+		sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
+		//Send(sendBuffer);
+		
+
+		GSessionManager.Broadcast(sendBuffer);
+
+		this_thread::sleep_for(250ms);
 	}
 
 	GThreadManager->Join();
