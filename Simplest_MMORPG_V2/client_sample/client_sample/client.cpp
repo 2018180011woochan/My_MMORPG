@@ -318,6 +318,8 @@
 #include "Session.h"
 #include "BufferReader.h"
 
+#include "ClientPacketHandler.h"
+
 char sendData[] = "HelloWorld";
 
 
@@ -333,26 +335,9 @@ public:
 	{
 	}
 
-	virtual int32 OnRecvPacket(BYTE* buffer, int32 len) override
+	virtual void OnRecvPacket(BYTE* buffer, int32 len) override
 	{
-		BufferReader br(buffer, len);
-
-		PacketHeader header;
-		br >> header;
-		//cout << "Packet ID : " << header.id << " Size :" << header.size << endl;
-
-		uint64 id;
-		uint32 hp;
-		uint16 attack;
-		br >> id >> hp >> attack;
-
-		cout << "ID : " << id << " HP : " << hp << " ATTACK: " << attack << endl;
-
-		char recvBuffer[4096];
-		br.Read(recvBuffer, header.size - sizeof(PacketHeader) - 8 - 4 - 2);
-		cout << recvBuffer << endl;
-
-		return len;
+		ClientPacketHandler::HandlePacket(buffer, len);
 	}
 
 	virtual void OnSend(int32 len) override

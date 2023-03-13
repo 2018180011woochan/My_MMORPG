@@ -115,5 +115,5 @@ protected:
 	// 컨텐츠에서 패킷세션을 상속받은애는 OnRecv를 사용할 수 없고
 	// OnRecvPacket을 오버라이딩해서 사용하게 한다
 	virtual int32 OnRecv(BYTE* buffer, int32 len) sealed;
-	virtual int32 OnRecvPacket(BYTE* buffer, int32 len) abstract;
+	virtual void OnRecvPacket(BYTE* buffer, int32 len) abstract;
 };

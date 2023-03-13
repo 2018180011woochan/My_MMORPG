@@ -342,6 +342,7 @@
 #include "GameSession.h"
 #include "GameSessionManager.h"
 #include "BufferWriter.h"
+#include "ServerPacketHandler.h"
 
 int main()
 {
@@ -365,28 +366,13 @@ int main()
 				}
 			});
 	}
-	char sendData[] = "HelloWorld";
+	char sendData[] = "가";
+	WCHAR sendData3[] = L"가";
+
 	while(true) 
 	{
-		SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
-
-		BufferWriter bw(sendBuffer->Buffer(), 4096);
-
-		PacketHeader* header = bw.Reserve<PacketHeader>();
-
-		// id(uint64) 체력(uint32) 공격력(uint16)
-		// 가변적
-		bw << (uint64)1001 << (uint32)100 << (uint16)10;
-		
-		// 크기를 알때
-		bw.Write(sendData, sizeof(sendData));
-
-		header->size = bw.WriteSize();
-		header->id = 1;	// 1 : hello message
-
-		sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
-		//Send(sendBuffer);
-		
+		vector<BuffData> buffs{ BuffData {100, 1.5f}, BuffData {200, 2.3f}, BuffData {300, 7.5f} };
+		SendBufferRef sendBuffer = ServerPacketHandler::Make_S_TEST(1001, 100, 10, buffs);
 
 		GSessionManager.Broadcast(sendBuffer);
 
