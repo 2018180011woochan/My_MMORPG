@@ -1,6 +1,8 @@
 #include "pch.h"
+#include "../../Server/protocol.h"
 #include "ClientPacketHandler.h"
 #include "BufferReader.h"
+
 
 void ClientPacketHandler::HandlePacket(BYTE* buffer, int32 len)
 {
@@ -11,12 +13,14 @@ void ClientPacketHandler::HandlePacket(BYTE* buffer, int32 len)
 
 	switch (header.id)
 	{
-	case S_TEST:
-		Handle_S_TEST(buffer, len);
+	case SC_TEST_OK:
+	{
+		Handle_SC_TEST_OK(buffer, len);	
 		break;
-
+	}
 	default:
-		break;
+		cout << "error~!!" << endl;
+		//printf("Unknown PACKET type [%d]\n", ptr[1]);
 	}
 
 	
@@ -68,6 +72,31 @@ void ClientPacketHandler::Handle_S_TEST(BYTE* buffer, int32 len)
 
 	for (int32 i = 0; i < buffCnt; ++i)
 		cout << "BuffInfo : " << buffs[i].buffid << " " << buffs[i].femainTime << endl;
+
+	wstring name;
+	uint16 nameLen;
+	br >> nameLen;
+	name.resize(nameLen);
+
+	br.Read((void*)name.data(), nameLen * sizeof(WCHAR));
+
+	wcout.imbue(std::locale("kor"));
+	wcout << name << endl;
+}
+
+void ClientPacketHandler::Handle_SC_TEST_OK(BYTE* buffer, int32 len)
+{
+	BufferReader br(buffer, len);
+
+	PacketHeader header;
+	br >> header;
+
+	bool isok;
+	uint64 id;
+
+	br >> isok >> id ;
+
+	cout << "isok : " << isok << " ID : " << id << endl;
 
 	wstring name;
 	uint16 nameLen;

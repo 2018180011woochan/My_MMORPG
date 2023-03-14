@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "../Server/protocol.h"
 #include "ServerPacketHandler.h"
 #include "BufferReader.h"
 #include "BufferWriter.h"
@@ -42,6 +43,31 @@ SendBufferRef ServerPacketHandler::Make_S_TEST(uint64 id, uint32 hp, uint16 atta
 
 	header->size = bw.WriteSize();
 	header->id = S_TEST;	// 1 : hello message
+
+	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
+	//Send(sendBuffer);
+
+	return sendBuffer;
+}
+
+SendBufferRef ServerPacketHandler::Make_SC_TEST_OK(bool isOK, uint64 id, wstring name)
+{
+	SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
+
+	BufferWriter bw(sendBuffer->Buffer(), 4096);
+
+	PacketHeader* header = bw.Reserve<PacketHeader>();
+
+	// id(uint64) 체력(uint32) 공격력(uint16)
+	// 가변적
+	bw << isOK << id;
+
+	// 가변 데이터
+	bw << (uint16)name.size();
+	bw.Write((void*)name.data(), name.size() * sizeof(WCHAR));
+
+	header->size = bw.WriteSize();
+	header->id = SC_TEST_OK;	// 1 : hello message
 
 	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
 	//Send(sendBuffer);

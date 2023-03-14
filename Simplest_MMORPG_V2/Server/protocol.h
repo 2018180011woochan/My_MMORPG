@@ -9,23 +9,37 @@ constexpr int MAX_USER = 10000;
 constexpr int NUM_NPC = 200000;
 
 // Packet ID
-constexpr char CS_LOGIN = 0;
-constexpr char CS_MOVE = 1;
-constexpr char CS_ATTACK = 2;
-constexpr char CS_CHAT = 3;
-constexpr char CS_PARTY_INVITE = 4;
+//constexpr char CS_LOGIN = 0;
+//constexpr char CS_MOVE = 1;
+//constexpr char CS_ATTACK = 2;
+//constexpr char CS_CHAT = 3;
+//constexpr char CS_PARTY_INVITE = 4;
+//
+//constexpr char SC_LOGIN_OK = 11;
+//constexpr char SC_LOGIN_FAIL = 12;
+//constexpr char SC_ADD_OBJECT = 13;
+//constexpr char SC_REMOVE_OBJECT = 14;
+//constexpr char SC_MOVE_OBJECT = 15;
+//constexpr char SC_CHAT = 16;
+//constexpr char SC_STAT_CHANGE = 17;
+//constexpr char SC_PLAYER_ATTACK = 18;
+//constexpr char SC_PARTY = 19;
 
-constexpr char SC_LOGIN_OK = 11;
-constexpr char SC_LOGIN_FAIL = 12;
-constexpr char SC_ADD_OBJECT = 13;
-constexpr char SC_REMOVE_OBJECT = 14;
-constexpr char SC_MOVE_OBJECT = 15;
-constexpr char SC_CHAT = 16;
-constexpr char SC_STAT_CHANGE = 17;
-constexpr char SC_PLAYER_ATTACK = 18;
-constexpr char SC_PARTY = 19;
+constexpr char CS_TEST = 0;
+constexpr char SC_TEST_OK = 10;
 
 #pragma pack (push, 1)
+struct CS_TEST_PACKET {
+	int id;
+	wstring name;
+};
+
+struct SC_TEST_OK_PACKET {
+	bool isok;
+	int id;
+	wstring name;
+};
+
 struct CS_LOGIN_PACKET {
 	unsigned char size;
 	char	type;
@@ -127,19 +141,4 @@ struct SC_STAT_CHANGE_PACKET {
 	int		exp;
 	int		hp, hpmax;
 };
-
-/////////////////////////////////////////////////// 
-struct SC_PLAYER_ATTACK_PACKET {	// ±¸ÇöÁß...
-	unsigned char size;
-	char	type;
-	int		id;
-};
-
-struct SC_PARTY_PACKET {
-	unsigned char size;
-	char	type;
-	int		id;
-};
-///////////////////////////////////////////////////
-
 #pragma pack (pop)
