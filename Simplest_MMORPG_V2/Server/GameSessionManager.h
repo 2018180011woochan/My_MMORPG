@@ -10,9 +10,12 @@ public:
 	void Remove(GameSessionRef session);
 	void Broadcast(SendBufferRef sendBuffer);
 
+public:
+	int GetAcceptedID();
+
 private:
 	USE_LOCK;
-	set<GameSessionRef> _sessions;
+	vector<GameSessionRef> _sessions;
 };
 
 extern GameSessionManager GSessionManager;

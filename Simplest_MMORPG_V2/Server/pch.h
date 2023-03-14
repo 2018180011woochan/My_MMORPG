@@ -9,4 +9,4 @@
 #endif
 
 #include "CorePch.h"
-
+enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME };

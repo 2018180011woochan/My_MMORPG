@@ -21,6 +21,9 @@
     <ClCompile Include="GameSessionManager.cpp">
       <Filter>Main</Filter>
     </ClCompile>
+    <ClCompile Include="Player.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="protocol.h">
@@ -33,6 +36,9 @@
       <Filter>Main</Filter>
     </ClInclude>
     <ClInclude Include="GameSessionManager.h">
+      <Filter>Main</Filter>
+    </ClInclude>
+    <ClInclude Include="Player.h">
       <Filter>Main</Filter>
     </ClInclude>
   </ItemGroup>

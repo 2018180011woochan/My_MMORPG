@@ -43,6 +43,9 @@
     <ClCompile Include="Object.cpp">
       <Filter>Object</Filter>
     </ClCompile>
+    <ClCompile Include="ServerSession.cpp">
+      <Filter>Main</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="chess2.png">
@@ -304,6 +307,9 @@
     </ClInclude>
     <ClInclude Include="global.h">
       <Filter>Default</Filter>
+    </ClInclude>
+    <ClInclude Include="ServerSession.h">
+      <Filter>Main</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

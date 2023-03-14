@@ -5,6 +5,7 @@ class Object
 private:
 	bool m_showing;
 	sf::Sprite m_sprite;
+	int Player_ID = 0;
 public:
 	int m_x, m_y;
 	Object(sf::Texture& t, int x, int y, int x2, int y2) {
@@ -43,5 +44,11 @@ public:
 		m_sprite.setPosition(rx, ry);
 		window->draw(m_sprite);
 	}
+
+public:
+	void SetID(int _id) { Player_ID = _id; }
+
+public:
+	int GetID() { return Player_ID; }
 };
 

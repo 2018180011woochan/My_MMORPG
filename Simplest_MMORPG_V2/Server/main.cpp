@@ -369,12 +369,16 @@ int main()
 			});
 	}
 
-	while(true) 
+	//while(true) 
 	{
 		/*vector<BuffData> buffs{ BuffData {100, 1.5f}, BuffData {200, 2.3f}, BuffData {300, 7.5f} };
 		SendBufferRef sendBuffer = ServerPacketHandler::Make_S_TEST(1001, 100, 10, buffs, L"±è¿ìÂù");*/
 
-		SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_TEST_OK(true, 77, L"±è¿ìÂù");
+		//GameSessionRef player;
+		//player->ClientID = GSessionManager.GetAcceptedID();
+		//player->ClientID = 9999;
+
+		SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(0, L"±è¿ìÂù");
 
 		GSessionManager.Broadcast(sendBuffer);
 
