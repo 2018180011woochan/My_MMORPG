@@ -311,6 +311,12 @@
     <ClInclude Include="ServerSession.h">
       <Filter>Main</Filter>
     </ClInclude>
+    <ClInclude Include="enum.h">
+      <Filter>Default</Filter>
+    </ClInclude>
+    <ClInclude Include="header.h">
+      <Filter>Default</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="include\SFML\Graphics\Glsl.inl">

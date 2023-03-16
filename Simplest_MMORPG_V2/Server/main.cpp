@@ -378,11 +378,11 @@ int main()
 		//player->ClientID = GSessionManager.GetAcceptedID();
 		//player->ClientID = 9999;
 
-		SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(0, L"±è¿ìÂù");
+		//SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(0, L"±è¿ìÂù");
 
-		GSessionManager.Broadcast(sendBuffer);
+		//GSessionManager.Broadcast(sendBuffer);
 
-		this_thread::sleep_for(250ms);
+		//this_thread::sleep_for(250ms);
 	}
 
 	GThreadManager->Join();

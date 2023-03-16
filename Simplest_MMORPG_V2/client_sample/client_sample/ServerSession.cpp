@@ -2,9 +2,13 @@
 #include "ServerSession.h"
 #include "ClientPacketHandler.h"
 
+PacketSessionRef mysession;
+
 void ServerSession::OnConnected()
 {
-	SendBufferRef sendBuffer = ClientPacketHandler::Make_CS_LOGIN(L"힘들어요");
+	mysession = GetPacketSessionRef();
+
+	SendBufferRef sendBuffer = ClientPacketHandler::Make_CS_LOGIN(L"우찬");
 
 	Send(sendBuffer);
 }

@@ -2,10 +2,6 @@
 
 class Object
 {
-private:
-	bool m_showing;
-	sf::Sprite m_sprite;
-	int Player_ID = 0;
 public:
 	int m_x, m_y;
 	Object(sf::Texture& t, int x, int y, int x2, int y2) {
@@ -50,5 +46,10 @@ public:
 
 public:
 	int GetID() { return Player_ID; }
+
+private:
+	bool m_showing;
+	sf::Sprite m_sprite;
+	int Player_ID = 0;
 };
 

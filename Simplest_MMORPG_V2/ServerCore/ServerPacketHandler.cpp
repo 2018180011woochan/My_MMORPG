@@ -3,6 +3,7 @@
 #include "ServerPacketHandler.h"
 #include "BufferReader.h"
 #include "BufferWriter.h"
+#include "../Server/GameSessionManager.h"
 
 void ServerPacketHandler::HandlePacket(BYTE* buffer, int32 len)
 {
@@ -15,6 +16,9 @@ void ServerPacketHandler::HandlePacket(BYTE* buffer, int32 len)
 	{
 	case CS_LOGIN:
 		Handle_CS_LOGIN(buffer, len);
+		break;
+	case CS_MOVE_OBJECT:
+		Handle_CS_MOVE(buffer, len);
 		break;
 	default:
 		cout << "error" << endl;
@@ -68,12 +72,28 @@ void ServerPacketHandler::Handle_CS_LOGIN(BYTE* buffer, int32 len)
 
 	br.Read((void*)name.data(), nameLen * sizeof(WCHAR));
 
-	SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(0, L"김우찬");
+	SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(GSessionManager.GetAcceptedID(), name);
 
-	wcout.imbue(std::locale("kor"));
-	wcout << name << endl;
-	//GSessionManager.Broadcast(sendBuffer);
+	GSessionManager.Broadcast(sendBuffer);
 
+}
+
+void ServerPacketHandler::Handle_CS_MOVE(BYTE* buffer, int32 len)
+{
+	BufferReader br(buffer, len);
+
+	PacketHeader header;
+	br >> header;
+
+	int id;
+	int direction;
+
+	br >> id >> direction;
+	cout << id << ", " << direction << endl;
+
+	SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_MOVE(id, direction);
+
+	GSessionManager.Broadcast(sendBuffer);
 }
 
 SendBufferRef ServerPacketHandler::Make_SC_LOGIN(uint64 id, wstring name)
@@ -94,6 +114,27 @@ SendBufferRef ServerPacketHandler::Make_SC_LOGIN(uint64 id, wstring name)
 
 	header->size = bw.WriteSize();
 	header->id = SC_LOGIN;	// 1 : hello message
+
+	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
+	//Send(sendBuffer);
+
+	return sendBuffer;
+}
+
+SendBufferRef ServerPacketHandler::Make_SC_MOVE(int id, int direction)
+{
+	SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
+
+	BufferWriter bw(sendBuffer->Buffer(), 4096);
+
+	PacketHeader* header = bw.Reserve<PacketHeader>();
+
+	// id(uint64) 체력(uint32) 공격력(uint16)
+	// 가변적
+	bw << id << direction;
+
+	header->size = bw.WriteSize();
+	header->id = SC_MOVE_OBJECT;	// 1 : hello message
 
 	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
 	//Send(sendBuffer);

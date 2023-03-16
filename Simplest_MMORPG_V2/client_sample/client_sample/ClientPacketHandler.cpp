@@ -3,6 +3,7 @@
 #include "ClientPacketHandler.h"
 #include "BufferReader.h"
 #include "BufferWriter.h"
+#include "Object.h"
 
 
 void ClientPacketHandler::HandlePacket(BYTE* buffer, int32 len)
@@ -17,6 +18,11 @@ void ClientPacketHandler::HandlePacket(BYTE* buffer, int32 len)
 	case SC_LOGIN:
 	{
 		Handle_SC_LOGIN(buffer, len);	
+		break;
+	}
+	case SC_MOVE_OBJECT:
+	{
+		Handle_SC_MOVE(buffer, len);
 		break;
 	}
 	default:
@@ -106,6 +112,25 @@ SendBufferRef ClientPacketHandler::Make_CS_LOGIN(wstring name)
 	return sendBuffer;
 }
 
+SendBufferRef ClientPacketHandler::Make_CS_MOVE(int id, DIRECTION _direction)
+{
+	SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
+
+	BufferWriter bw(sendBuffer->Buffer(), 4096);
+
+	PacketHeader* header = bw.Reserve<PacketHeader>();
+
+	// 가변 데이터
+	bw << id << (int)_direction;
+
+	header->size = bw.WriteSize();
+	header->id = CS_MOVE_OBJECT;
+
+	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
+
+	return sendBuffer;
+}
+
 void ClientPacketHandler::Handle_SC_LOGIN(BYTE* buffer, int32 len)
 {
 	BufferReader br(buffer, len);
@@ -128,4 +153,22 @@ void ClientPacketHandler::Handle_SC_LOGIN(BYTE* buffer, int32 len)
 
 	wcout.imbue(std::locale("kor"));
 	wcout << name << endl;
+}
+
+void ClientPacketHandler::Handle_SC_MOVE(BYTE* buffer, int32 len)
+{
+	BufferReader br(buffer, len);
+
+	PacketHeader header;
+	br >> header;
+
+	int id;
+	int direction;
+
+	br >> id >> direction;
+
+	cout << " ID : " << id << ", direction : " << direction << endl;
+	// TODO
+	// avatar 와 player에 있는 id의 위치를 움직여줘야한다
+
 }

@@ -30,6 +30,7 @@
 
 #include "CorePch.h"
 
-#include "global.h"
+#include "header.h"
+
 
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME };

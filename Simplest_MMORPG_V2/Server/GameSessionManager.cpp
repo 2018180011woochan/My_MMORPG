@@ -4,12 +4,18 @@
 #include "GameSession.h"
 
 GameSessionManager GSessionManager;
+bool ConnectedControl = true;
 
 void GameSessionManager::Add(GameSessionRef session)
 {
 	WRITE_LOCK;
-	session->session_state = ST_ACCEPTED;
-	_sessions.push_back(session);
+	if (ConnectedControl) {
+		session->session_state = ST_ACCEPTED;
+		_sessions.push_back(session);
+		ConnectedControl = false;
+	}
+	else
+		ConnectedControl = true;
 
 }
 
@@ -34,8 +40,10 @@ int GameSessionManager::GetAcceptedID()
 {
 	for (int i = 0; i < MAX_USER; ++i)
 	{
-		if (_sessions[i]->ClientID == -1)
+		if (_sessions[i]->ClientID == -1) {
+			_sessions[i]->ClientID = i;
 			return i;
+		}
 	}
 	return 0;
 }

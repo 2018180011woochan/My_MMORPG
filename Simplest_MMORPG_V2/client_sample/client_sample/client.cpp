@@ -24,42 +24,19 @@ int g_top_y;
 int g_myid;
 sf::RenderWindow* g_window;
 
-Object avatar;
-Object players[MAX_USER];
-
 Object white_tile;
 Object black_tile;
 
 sf::Texture* board;
 sf::Texture* pieces;
 
-ServerSession* mySession;
+//ServerSession* mySession;
 
-void send_packet(void* packet)
-{
-	unsigned char* p = reinterpret_cast<unsigned char*>(packet);
-	size_t sent = 0;
-	mysocket.send(packet, p[0], sent);
-}
-
-void Login()
-{
-	CS_LOGIN_PACKET p;
-	p.id = 99;
-	p.name = L"우찬";
-	p.size = sizeof(CS_LOGIN_PACKET);
-	p.type = CS_LOGIN;
-
-	send_packet(&p);
-}
+Object avatar;
+Object players[MAX_USER];
 
 void client_initialize()
 {
-	//Login();
-	
-
-	
-
 	board = new sf::Texture;
 	pieces = new sf::Texture;
 	board->loadFromFile("chessmap.bmp");
@@ -68,7 +45,6 @@ void client_initialize()
 	black_tile = Object{ *board, 69, 5, TILE_WIDTH, TILE_WIDTH };
 	avatar = Object{ *pieces, 128, 0, 64, 64 };
 	avatar.move(4, 4);
-	avatar.SetID(0);
 	for (auto& pl : players) {
 		pl = Object{ *pieces, 64, 0, 64, 64 };
 	}
@@ -78,6 +54,7 @@ void client_finish()
 {
 	delete board;
 	delete pieces;
+	//delete mySession;
 }
 
 void process_data(char* net_buf, size_t io_byte)
@@ -124,7 +101,7 @@ int main()
 {
 	wcout.imbue(locale("korean"));
 
-	mySession = new ServerSession();
+	//mySession = new ServerSession();
 
 	sf::Socket::Status status = mysocket.connect("127.0.0.1", PORT_NUM);
 	mysocket.setBlocking(false);
@@ -133,6 +110,8 @@ int main()
 		MakeShared<ServerSession>, 1);
 
 	service->Start();
+
+	//mySession = ServerSession::GetPacketSessionRef();
 
 	if (status != sf::Socket::Done) {
 		wcout << L"서버와 연결할 수 없습니다.\n";
@@ -157,6 +136,7 @@ int main()
 		}
 
 		sf::Event event;
+		SendBufferRef sendBuffer;
 		while (window.pollEvent(event))
 		{
 			if (event.type == sf::Event::Closed)
@@ -165,16 +145,21 @@ int main()
 				int p_type = -1;
 				switch (event.key.code) {
 				case sf::Keyboard::Left:
-					//p_type = CS_LEFT;
+					sendBuffer = ClientPacketHandler::Make_CS_MOVE(avatar.GetID(), DIRECTION::LEFT);
+					mysession->Send(sendBuffer);
+
 					break;
 				case sf::Keyboard::Right:
-					//p_type = CS_RIGHT;
+					sendBuffer = ClientPacketHandler::Make_CS_MOVE(avatar.GetID(), DIRECTION::RIGHT);
+					mysession->Send(sendBuffer);
 					break;
 				case sf::Keyboard::Up:
-					//p_type = CS_UP;
+					sendBuffer = ClientPacketHandler::Make_CS_MOVE(avatar.GetID(), DIRECTION::UP);
+					mysession->Send(sendBuffer);
 					break;
 				case sf::Keyboard::Down:
-					//p_type = CS_DOWN;
+					sendBuffer = ClientPacketHandler::Make_CS_MOVE(avatar.GetID(), DIRECTION::DOWN);
+					mysession->Send(sendBuffer);
 					break;
 				case sf::Keyboard::Escape:
 					window.close();
