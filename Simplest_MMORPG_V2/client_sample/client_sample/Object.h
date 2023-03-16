@@ -53,3 +53,5 @@ private:
 	int Player_ID = 0;
 };
 
+extern Object avatar;
+extern Object players[10000];

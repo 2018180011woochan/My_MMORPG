@@ -30,10 +30,7 @@ Object black_tile;
 sf::Texture* board;
 sf::Texture* pieces;
 
-//ServerSession* mySession;
 
-Object avatar;
-Object players[MAX_USER];
 
 void client_initialize()
 {
@@ -101,8 +98,6 @@ int main()
 {
 	wcout.imbue(locale("korean"));
 
-	//mySession = new ServerSession();
-
 	sf::Socket::Status status = mysocket.connect("127.0.0.1", PORT_NUM);
 	mysocket.setBlocking(false);
 
@@ -110,8 +105,6 @@ int main()
 		MakeShared<ServerSession>, 1);
 
 	service->Start();
-
-	//mySession = ServerSession::GetPacketSessionRef();
 
 	if (status != sf::Socket::Done) {
 		wcout << L"서버와 연결할 수 없습니다.\n";

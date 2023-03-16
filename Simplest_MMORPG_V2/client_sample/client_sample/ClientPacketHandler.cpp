@@ -143,6 +143,7 @@ void ClientPacketHandler::Handle_SC_LOGIN(BYTE* buffer, int32 len)
 	br >> id ;
 
 	cout  << " ID : " << id << endl;
+	avatar.SetID(id);
 
 	wstring name;
 	uint16 nameLen;
@@ -163,12 +164,23 @@ void ClientPacketHandler::Handle_SC_MOVE(BYTE* buffer, int32 len)
 	br >> header;
 
 	int id;
-	int direction;
+	short x, y;
 
-	br >> id >> direction;
+	br >> id >> x >> y;
 
-	cout << " ID : " << id << ", direction : " << direction << endl;
 	// TODO
 	// avatar 와 player에 있는 id의 위치를 움직여줘야한다
+	if (id == avatar.GetID())
+	{
+		avatar.move(x, y);
+	}
+	else
+	{
+		for (auto& p : players)
+		{
+			if (id == p.GetID())
+				p.move(x, y);
+		}
+	}
 
 }

@@ -72,9 +72,12 @@ void ServerPacketHandler::Handle_CS_LOGIN(BYTE* buffer, int32 len)
 
 	br.Read((void*)name.data(), nameLen * sizeof(WCHAR));
 
-	SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(GSessionManager.GetAcceptedID(), name);
+	int id = GSessionManager.GetAcceptedID();
 
-	GSessionManager.Broadcast(sendBuffer);
+	SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(id, name);
+
+	//GSessionManager.Broadcast(sendBuffer);
+	GSessionManager.Send(id, sendBuffer);
 
 }
 
@@ -113,7 +116,7 @@ SendBufferRef ServerPacketHandler::Make_SC_LOGIN(uint64 id, wstring name)
 	bw.Write((void*)name.data(), name.size() * sizeof(WCHAR));
 
 	header->size = bw.WriteSize();
-	header->id = SC_LOGIN;	// 1 : hello message
+	header->id = SC_LOGIN;	
 
 	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
 	//Send(sendBuffer);
@@ -131,13 +134,28 @@ SendBufferRef ServerPacketHandler::Make_SC_MOVE(int id, int direction)
 
 	// id(uint64) 체력(uint32) 공격력(uint16)
 	// 가변적
-	bw << id << direction;
+	bw << id;
+
+	short x = GSessionManager.GetTargetX(id);
+	short y = GSessionManager.GetTargetY(id);
+
+	if (x == -1 || y == -1)
+		cout << "move error!" << endl;
+
+	switch (direction) {
+	case 0: if (y > 0) y--; break;
+	case 1: if (y < W_HEIGHT - 1) y++; break;
+	case 2: if (x > 0) x--; break;
+	case 3: if (x < W_WIDTH - 1) x++; break;
+	}
+	bw << x << y;
+
+	GSessionManager.SetTargetPos(id, x, y);
 
 	header->size = bw.WriteSize();
-	header->id = SC_MOVE_OBJECT;	// 1 : hello message
+	header->id = SC_MOVE_OBJECT;
 
 	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
-	//Send(sendBuffer);
 
 	return sendBuffer;
 }

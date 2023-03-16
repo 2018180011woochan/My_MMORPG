@@ -1,8 +1,6 @@
 #pragma once
 #include "Session.h"
 
-
-
 class GameSession : public PacketSession
 {
 public:
@@ -17,6 +15,7 @@ public:
 
 public:
 	int ClientID = -1;
+	short x, y = 0;
 	SESSION_STATE session_state = ST_FREE;
 };
 

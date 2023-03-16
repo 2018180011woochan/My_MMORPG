@@ -36,6 +36,48 @@ void GameSessionManager::Broadcast(SendBufferRef sendBuffer)
 	}
 }
 
+void GameSessionManager::Send(int id, SendBufferRef sendBuffer)
+{
+	WRITE_LOCK;
+	for (GameSessionRef session : _sessions)
+	{
+		if (id == session->ClientID)
+			session->Send(sendBuffer);
+	}
+}
+
+short GameSessionManager::GetTargetX(int id)
+{
+	for (auto& p : _sessions)
+	{
+		if (p->ClientID == id)	
+			return p->x;
+	}
+	return -1;
+}
+
+short GameSessionManager::GetTargetY(int id)
+{
+	for (auto& p : _sessions)
+	{
+		if (p->ClientID == id)
+			return p->y;
+	}
+	return -1;
+}
+
+void GameSessionManager::SetTargetPos(int id, int x, int y)
+{
+	for (auto& p : _sessions)
+	{
+		if (p->ClientID == id)
+		{
+			p->x = x;
+			p->y = y;
+		}
+	}
+}
+
 int GameSessionManager::GetAcceptedID()
 {
 	for (int i = 0; i < MAX_USER; ++i)
