@@ -79,6 +79,14 @@ void ServerPacketHandler::Handle_CS_LOGIN(BYTE* buffer, int32 len)
 	//GSessionManager.Broadcast(sendBuffer);
 	GSessionManager.Send(id, sendBuffer);
 
+	// TODO
+	// 사정거리 안에 들어오면 다른 플레이어들에게 ADD패킷 보내주기 (시야처리)
+	// 지금은 그냥 ADD패킷 보내기
+	short x = GSessionManager.GetTargetX(id);
+	short y = GSessionManager.GetTargetY(id);
+	sendBuffer = ServerPacketHandler::Make_SC_ADD(id, name, x, y);
+	GSessionManager.Broadcast(sendBuffer);
+
 }
 
 void ServerPacketHandler::Handle_CS_MOVE(BYTE* buffer, int32 len)
@@ -154,6 +162,24 @@ SendBufferRef ServerPacketHandler::Make_SC_MOVE(int id, int direction)
 
 	header->size = bw.WriteSize();
 	header->id = SC_MOVE_OBJECT;
+
+	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
+
+	return sendBuffer;
+}
+
+SendBufferRef ServerPacketHandler::Make_SC_ADD(int id, wstring name, short x, short y)
+{
+	SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
+
+	BufferWriter bw(sendBuffer->Buffer(), 4096);
+
+	PacketHeader* header = bw.Reserve<PacketHeader>();
+
+	bw << id << name << x << y;
+
+	header->size = bw.WriteSize();
+	header->id = SC_ADD_OBJECT;
 
 	sendBuffer->CopyData(bw.GetBuffer(), bw.WriteSize());
 

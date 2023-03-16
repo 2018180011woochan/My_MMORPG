@@ -22,5 +22,6 @@ public:
 
 	static SendBufferRef Make_SC_LOGIN(uint64 id, wstring name);
 	static SendBufferRef Make_SC_MOVE(int id, int direction);
+	static SendBufferRef Make_SC_ADD(int id, wstring name, short x, short y);
 };
 

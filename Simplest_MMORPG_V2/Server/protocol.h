@@ -29,6 +29,7 @@ constexpr char CS_MOVE_OBJECT = 1;
 
 constexpr char SC_LOGIN = 10;
 constexpr char SC_MOVE_OBJECT = 11;
+constexpr char SC_ADD_OBJECT = 12;
 
 #pragma pack (push, 1)
 struct CS_LOGIN_PACKET {

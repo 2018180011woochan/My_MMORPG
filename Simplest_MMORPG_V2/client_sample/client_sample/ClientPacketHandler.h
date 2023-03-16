@@ -19,5 +19,6 @@ public:
 
 	static void Handle_SC_LOGIN(BYTE* buffer, int32 len);
 	static void Handle_SC_MOVE(BYTE* buffer, int32 len);
+	static void Handle_SC_ADD(BYTE* buffer, int32 len);
 };
 

@@ -25,6 +25,11 @@ void ClientPacketHandler::HandlePacket(BYTE* buffer, int32 len)
 		Handle_SC_MOVE(buffer, len);
 		break;
 	}
+	case SC_ADD_OBJECT:
+	{
+		Handle_SC_ADD(buffer, len);
+		break;
+	}
 	default:
 		cout << "error~!!" << endl;
 		//printf("Unknown PACKET type [%d]\n", ptr[1]);
@@ -171,16 +176,29 @@ void ClientPacketHandler::Handle_SC_MOVE(BYTE* buffer, int32 len)
 	// TODO
 	// avatar 와 player에 있는 id의 위치를 움직여줘야한다
 	if (id == avatar.GetID())
-	{
 		avatar.move(x, y);
-	}
 	else
-	{
-		for (auto& p : players)
-		{
-			if (id == p.GetID())
-				p.move(x, y);
-		}
-	}
+		players[id].move(x, y);
 
+}
+
+void ClientPacketHandler::Handle_SC_ADD(BYTE* buffer, int32 len)
+{
+	BufferReader br(buffer, len);
+
+	PacketHeader header;
+	br >> header;
+
+	int id;
+	short x, y;
+
+	br >> id >> x >> y;
+
+	// avatar이면 본인이므로 바로 리턴
+	if (avatar.GetID() == id)
+		return;
+
+	// 나중엔 이름이랑 능력치까지
+	players[id].SetID(id);
+	players[id].move(x, y);
 }

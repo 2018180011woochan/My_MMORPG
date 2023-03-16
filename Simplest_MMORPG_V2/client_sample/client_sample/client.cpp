@@ -58,6 +58,7 @@ void process_data(char* net_buf, size_t io_byte)
 {
 	ClientPacketHandler::HandlePacket((BYTE*)net_buf, io_byte);
 	avatar.show();
+	for (auto& pl : players) pl.show();
 }
 
 void client_main()

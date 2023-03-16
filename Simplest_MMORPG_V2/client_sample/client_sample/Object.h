@@ -50,7 +50,7 @@ public:
 private:
 	bool m_showing;
 	sf::Sprite m_sprite;
-	int Player_ID = 0;
+	int Player_ID = -1;
 };
 
 extern Object avatar;
