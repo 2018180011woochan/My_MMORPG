@@ -108,6 +108,9 @@ SendBufferRef ClientPacketHandler::Make_CS_LOGIN(wstring name)
 	bw << (uint16)name.size();
 	bw.Write((void*)name.data(), name.size() * sizeof(WCHAR));
 
+	//bw << avatar.m_x << avatar.m_y;
+	bw << (short)5 << (short)5;
+
 	header->size = bw.WriteSize();
 	header->id = CS_LOGIN;	// 1 : hello message
 
@@ -157,6 +160,10 @@ void ClientPacketHandler::Handle_SC_LOGIN(BYTE* buffer, int32 len)
 
 	br.Read((void*)name.data(), nameLen * sizeof(WCHAR));
 
+	short x, y;
+	br >> x >> y;
+	avatar.move(x, y);
+
 	wcout.imbue(std::locale("kor"));
 	wcout << name << endl;
 }
@@ -172,6 +179,9 @@ void ClientPacketHandler::Handle_SC_MOVE(BYTE* buffer, int32 len)
 	short x, y;
 
 	br >> id >> x >> y;
+
+	if (id > MAX_USER)
+		return;
 
 	// TODO
 	// avatar 와 player에 있는 id의 위치를 움직여줘야한다
@@ -199,6 +209,9 @@ void ClientPacketHandler::Handle_SC_ADD(BYTE* buffer, int32 len)
 		return;
 
 	// 나중엔 이름이랑 능력치까지
-	players[id].SetID(id);
-	players[id].move(x, y);
+	if (id <= MAX_USER) {
+		players[id].SetID(id);
+		players[id].move(x, y);
+		cout << id << "번 플레이어 추가" << endl;
+	}
 }

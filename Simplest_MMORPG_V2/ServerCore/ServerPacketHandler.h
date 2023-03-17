@@ -20,7 +20,7 @@ public:
 	static void Handle_CS_LOGIN(BYTE* buffer, int32 len);
 	static void Handle_CS_MOVE(BYTE* buffer, int32 len);
 
-	static SendBufferRef Make_SC_LOGIN(uint64 id, wstring name);
+	static SendBufferRef Make_SC_LOGIN(uint64 id, wstring name, short x, short y);
 	static SendBufferRef Make_SC_MOVE(int id, int direction);
 	static SendBufferRef Make_SC_ADD(int id, wstring name, short x, short y);
 };

@@ -74,19 +74,22 @@ void ServerPacketHandler::Handle_CS_LOGIN(BYTE* buffer, int32 len)
 
 	int id = GSessionManager.GetAcceptedID();
 
-	SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(id, name);
+	short x, y;
 
-	//GSessionManager.Broadcast(sendBuffer);
+	br >> x >> y;
+	GSessionManager.SetTargetPos(id, x, y);
+
+	SendBufferRef sendBuffer = ServerPacketHandler::Make_SC_LOGIN(id, name, x ,y);
+
 	GSessionManager.Send(id, sendBuffer);
 
 	// TODO
 	// 사정거리 안에 들어오면 다른 플레이어들에게 ADD패킷 보내주기 (시야처리)
 	// 지금은 그냥 ADD패킷 보내기
-	short x = GSessionManager.GetTargetX(id);
-	short y = GSessionManager.GetTargetY(id);
 	sendBuffer = ServerPacketHandler::Make_SC_ADD(id, name, x, y);
 	GSessionManager.Broadcast(sendBuffer);
 
+	// 사정 거리 안의 이미 접속한 플레이어들의 정보도 ADD패킷으로 보내준다
 }
 
 void ServerPacketHandler::Handle_CS_MOVE(BYTE* buffer, int32 len)
@@ -107,7 +110,7 @@ void ServerPacketHandler::Handle_CS_MOVE(BYTE* buffer, int32 len)
 	GSessionManager.Broadcast(sendBuffer);
 }
 
-SendBufferRef ServerPacketHandler::Make_SC_LOGIN(uint64 id, wstring name)
+SendBufferRef ServerPacketHandler::Make_SC_LOGIN(uint64 id, wstring name, short x, short y)
 {
 	SendBufferRef sendBuffer = make_shared<SendBuffer>(4096);
 
@@ -122,6 +125,8 @@ SendBufferRef ServerPacketHandler::Make_SC_LOGIN(uint64 id, wstring name)
 	// 가변 데이터
 	bw << (uint16)name.size();
 	bw.Write((void*)name.data(), name.size() * sizeof(WCHAR));
+	
+	bw << x << y;
 
 	header->size = bw.WriteSize();
 	header->id = SC_LOGIN;	
@@ -155,6 +160,7 @@ SendBufferRef ServerPacketHandler::Make_SC_MOVE(int id, int direction)
 	case 1: if (y < W_HEIGHT - 1) y++; break;
 	case 2: if (x > 0) x--; break;
 	case 3: if (x < W_WIDTH - 1) x++; break;
+	default: break;
 	}
 	bw << x << y;
 

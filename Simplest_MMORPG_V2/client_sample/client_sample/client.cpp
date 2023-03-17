@@ -41,7 +41,7 @@ void client_initialize()
 	white_tile = Object{ *board, 5, 5, TILE_WIDTH, TILE_WIDTH };
 	black_tile = Object{ *board, 69, 5, TILE_WIDTH, TILE_WIDTH };
 	avatar = Object{ *pieces, 128, 0, 64, 64 };
-	avatar.move(4, 4);
+	avatar.move(1, 1);
 	for (auto& pl : players) {
 		pl = Object{ *pieces, 64, 0, 64, 64 };
 	}

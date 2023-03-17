@@ -35,6 +35,7 @@ constexpr char SC_ADD_OBJECT = 12;
 struct CS_LOGIN_PACKET {
 	unsigned char size;
 	char	type;
+	short x, y;
 	int id;
 	wstring name;
 };
@@ -47,6 +48,7 @@ struct CS_MOVE_PACKET {
 struct SC_LOGIN_PACKET {
 	int id;
 	wstring name;
+	short x, y;
 };
 
 struct SC_MOVE_PACKET {

@@ -2,6 +2,7 @@
 #include "../Server/protocol.h"
 #include "GameSessionManager.h"
 #include "GameSession.h"
+#include "ServerPacketHandler.h"
 
 GameSessionManager GSessionManager;
 bool ConnectedControl = true;
@@ -10,8 +11,9 @@ void GameSessionManager::Add(GameSessionRef session)
 {
 	WRITE_LOCK;
 	if (ConnectedControl) {
-		session->session_state = ST_ACCEPTED;
+		session->session_state = ST_INGAME;
 		_sessions.push_back(session);
+
 		ConnectedControl = false;
 	}
 	else
@@ -48,6 +50,7 @@ void GameSessionManager::Send(int id, SendBufferRef sendBuffer)
 
 short GameSessionManager::GetTargetX(int id)
 {
+	WRITE_LOCK;
 	for (auto& p : _sessions)
 	{
 		if (p->ClientID == id)	
@@ -58,6 +61,7 @@ short GameSessionManager::GetTargetX(int id)
 
 short GameSessionManager::GetTargetY(int id)
 {
+	WRITE_LOCK;
 	for (auto& p : _sessions)
 	{
 		if (p->ClientID == id)
@@ -68,6 +72,7 @@ short GameSessionManager::GetTargetY(int id)
 
 void GameSessionManager::SetTargetPos(int id, int x, int y)
 {
+	WRITE_LOCK;
 	for (auto& p : _sessions)
 	{
 		if (p->ClientID == id)
@@ -80,6 +85,7 @@ void GameSessionManager::SetTargetPos(int id, int x, int y)
 
 int GameSessionManager::GetAcceptedID()
 {
+	WRITE_LOCK;
 	for (int i = 0; i < MAX_USER; ++i)
 	{
 		if (_sessions[i]->ClientID == -1) {
