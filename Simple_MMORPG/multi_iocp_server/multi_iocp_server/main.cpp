@@ -279,12 +279,17 @@ void process_packet(int c_id, char* packet)
 
 		for (auto& pl : clients) {
 			pl._lock.lock();
+			if (pl._id == c_id) {
+				pl._lock.unlock();
+				continue;
+			}
 			if (ST_INGAME != pl._s_state) {
 				pl._lock.unlock();
 				continue;
 			}
 			// 나중엔 거리가 가까운애들만 추가
 			pl.send_add_object(c_id);
+			clients[c_id].send_add_object(pl._id);
 			pl._lock.unlock();
 		}
 
