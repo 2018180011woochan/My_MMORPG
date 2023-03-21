@@ -136,23 +136,8 @@ public:
 		OVER_EXP* sdata = new OVER_EXP{ reinterpret_cast<char*>(packet) };
 		WSASend(_socket, &sdata->_wsabuf, 1, 0, 0, &sdata->_over, 0);
 	}
-	void send_login_ok_packet()
-	{
-		SC_LOGIN_OK_PACKET p;
-		p.size = sizeof(SC_LOGIN_OK_PACKET);
-		p.type = SC_LOGIN_OK;
-		///////////////DB에 있다면 DB에서 꺼내올 것들 //////////////////
-		p.id = _obj_stat._id;
-		p.x = _obj_stat.x;
-		p.y = _obj_stat.y;
-		p.level = _obj_stat.level;
-		p.exp = _obj_stat.exp;
-		p.hpmax = _obj_stat.hpmax;
-		p.hp = p.hpmax;
-		p.race = RACE::RACE_PLAYER;
-		////////////////////////////////////////////////////////////////
-		do_send(&p);
-	}
+
+	void send_login_ok_packet(int c_id);
 	void send_move_packet(int c_id, int client_time);
 	void send_add_object(int c_id);
 	void send_chat_packet(int c_id, const char* mess);
@@ -186,6 +171,30 @@ int distance(int a, int b)
 {
 	return abs(clients[a]._obj_stat.x - clients[b]._obj_stat.x)
 		+ abs(clients[a]._obj_stat.y - clients[b]._obj_stat.y);
+}
+
+void SESSION::send_login_ok_packet(int c_id)
+{
+	SC_LOGIN_OK_PACKET p;
+	p.size = sizeof(SC_LOGIN_OK_PACKET);
+	p.type = SC_LOGIN_OK;
+	///////////////DB에 있다면 DB에서 꺼내올 것들 //////////////////
+	p.id = clients[c_id]._obj_stat._id;
+	//p.x = _obj_stat.x;
+	//p.y = _obj_stat.y;
+	p.x = rand() % W_WIDTH;
+	p.y = rand() % W_HEIGHT;
+
+	clients[p.id]._obj_stat.x = p.x;
+	clients[p.id]._obj_stat.y = p.y;
+
+	p.level = clients[c_id]._obj_stat.level;
+	p.exp = clients[c_id]._obj_stat.exp;
+	p.hpmax = clients[c_id]._obj_stat.hpmax;
+	p.hp = p.hpmax;
+	p.race = RACE::RACE_PLAYER;
+	////////////////////////////////////////////////////////////////
+	do_send(&p);
 }
 
 void SESSION::send_move_packet(int c_id, int client_time)
@@ -264,7 +273,7 @@ void process_packet(int c_id, char* packet)
 		strcpy_s(clients[c_id]._obj_stat._name, p->name);
 		clients[c_id]._obj_stat._id = c_id;
 		clients[c_id]._obj_stat._db_id = p->db_id;
-		clients[c_id].send_login_ok_packet();
+		clients[c_id].send_login_ok_packet(c_id);
 		clients[c_id]._s_state = ST_INGAME;
 		clients[c_id]._lock.unlock();
 
