@@ -308,7 +308,7 @@ void ProcessPacket(char* ptr)
 			players[id].show();
 			strcpy_s(players[id].my_name, packet->name);
 		}
-		/*else {
+		else {
 			switch (packet->race)
 			{
 			case RACE_SKELETON:
@@ -333,7 +333,7 @@ void ProcessPacket(char* ptr)
 			npcs[id - MAX_USER].set_name(packet->name, false);
 			npcs[id - MAX_USER].set_info(packet->id, packet->level, packet->hp, packet->hpmax, packet->x, packet->y);
 			npcs[id - MAX_USER].show();
-		}*/
+		}
 		break;
 	}
 	case SC_MOVE_OBJECT:
@@ -347,6 +347,9 @@ void ProcessPacket(char* ptr)
 		}
 		else if (packet->id < MAX_USER) {			// 다른 유저 캐릭터 이동
 			players[packet->id].move(packet->x, packet->y);
+		}
+		else {
+			npcs[packet->id - MAX_USER].move(packet->x, packet->y);
 		}
 
 		break;

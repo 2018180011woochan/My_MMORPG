@@ -29,6 +29,7 @@ using namespace std;
 
 void do_timer();
 void Init_npc();
+void Move_NPC(int _npc_id);
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
@@ -180,13 +181,19 @@ void SESSION::send_login_ok_packet(int c_id)
 	p.type = SC_LOGIN_OK;
 	///////////////DB에 있다면 DB에서 꺼내올 것들 //////////////////
 	p.id = clients[c_id]._obj_stat._id;
-	//p.x = _obj_stat.x;
-	//p.y = _obj_stat.y;
-	p.x = rand() % W_WIDTH;
-	p.y = rand() % W_HEIGHT;
+	/*p.x = _obj_stat.x;
+	p.y = _obj_stat.y;*/
 
+	p.x = 1;
+	p.y = 1; 
 	clients[p.id]._obj_stat.x = p.x;
 	clients[p.id]._obj_stat.y = p.y;
+
+	//p.x = rand() % W_WIDTH;
+	//p.y = rand() % W_HEIGHT;
+
+	//clients[p.id]._obj_stat.x = p.x;
+	//clients[p.id]._obj_stat.y = p.y;
 
 	p.level = clients[c_id]._obj_stat.level;
 	p.exp = clients[c_id]._obj_stat.exp;
@@ -300,6 +307,10 @@ void process_packet(int c_id, char* packet)
 		}
 
 		for (auto& obj : clients) {
+			if (obj._obj_stat._id == 10001)
+			{
+				int a = 0;
+			}
 			if (obj._obj_stat._id == c_id) continue;
 			if (ST_INGAME != obj._s_state) continue;
 
@@ -597,7 +608,9 @@ void do_worker()
 			delete ex_over;
 			break;
 		case OP_RANDOM_MOVE: {
-
+			// 일단 그냥 ROMING
+			int npc_id = static_cast<int>(key);
+			Move_NPC(npc_id);
 			delete ex_over;
 		}
 						   break;
@@ -605,15 +618,75 @@ void do_worker()
 	} // WHILE
 }
 
+void Move_NPC(int _npc_id)
+{
+	short x = clients[_npc_id]._obj_stat.x;
+	short y = clients[_npc_id]._obj_stat.y;
+	unordered_set<int> old_vl;
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i]._s_state != ST_INGAME) continue;
+		if (distance(_npc_id, i) <= RANGE) old_vl.insert(i);
+	}
+
+	switch (rand() % 4) {
+	case 0: if (y > 0) y--; break;
+	case 1: if (y < W_HEIGHT - 1) y++; break;
+	case 2: if (x > 0) x--; break;
+	case 3: if (x < W_WIDTH - 1) x++; break;
+	}
+
+	clients[_npc_id]._obj_stat.x = x;
+	clients[_npc_id]._obj_stat.y = y;
+
+	unordered_set<int> new_vl;
+	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i]._s_state != ST_INGAME) continue;
+		if (distance(_npc_id, i) <= RANGE) new_vl.insert(i);
+	}
+
+	for (auto p_id : new_vl) {
+		clients[p_id]._ViewListLock.lock();
+		if (0 == clients[p_id].view_list.count(_npc_id)) {
+			clients[p_id].view_list.insert(_npc_id);
+			clients[p_id]._ViewListLock.unlock();
+			clients[p_id].send_add_object(_npc_id);
+		}
+		else {
+			clients[p_id]._ViewListLock.unlock();
+			clients[p_id].send_move_packet(_npc_id, 0);
+		}
+	}
+	for (auto p_id : old_vl) {
+		if (0 == new_vl.count(p_id)) {
+			clients[p_id]._ViewListLock.lock();
+			if (clients[p_id].view_list.count(_npc_id) == 1) {
+				clients[p_id].view_list.erase(_npc_id);
+				clients[p_id]._ViewListLock.unlock();
+				clients[p_id].Send_Remove_Packet(_npc_id);
+			}
+			else
+				clients[p_id]._ViewListLock.unlock();
+		}
+	}
+}
 
 void do_ai_ver_heat_beat()
 {
 	for (;;) {
 		auto start_t = chrono::system_clock::now();
 
-		for (int i = 10000; i < NUM_NPC; ++i)
+		for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
 		{
-
+			for (int j = 0; j < MAX_USER; ++j) {
+				if (clients[j]._s_state != ST_INGAME) break;
+				if (distance(i, j) < RANGE)
+				{
+					auto ex_over = new OVER_EXP;
+					ex_over->_comp_type = OP_RANDOM_MOVE;
+					PostQueuedCompletionStatus(g_h_iocp, 1, i, &ex_over->_over);
+				}
+			}
+			
 		}
 		
 		auto end_t = chrono::system_clock::now();
@@ -665,7 +738,7 @@ void Init_npc()
 		clients[i]._obj_stat._id = i;
 	cout << "NPC initialize Begin.\n";
 
-	for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
+	for (int i = MAX_USER; i < MAX_USER + 10; ++i)
 	{
 		// Skeleton
 		clients[i]._s_state = ST_INGAME;
@@ -675,38 +748,54 @@ void Init_npc()
 		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
 		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
 		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
+		clients[i]._obj_stat.x = rand() % 10;
+		clients[i]._obj_stat.y = rand() % 10;
 		strcpy_s(clients[i]._obj_stat._name, "Skeleton");
 	}
-	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
-	{
-		// Wraith
-		clients[i]._s_state = ST_INGAME;
-		clients[i]._obj_stat.race = RACE::RACE_WRIATH;
-		clients[i]._obj_stat.level = 2;
-		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
-		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
-		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
-		strcpy_s(clients[i]._obj_stat._name, "Wriath");
-	}
-	for (int i = MAX_USER + 100000; i < MAX_USER + 150000; ++i)
-	{
-		// Devil
-		clients[i]._s_state = ST_INGAME;
-		clients[i]._obj_stat.race = RACE::RACE_DEVIL;
-		clients[i]._obj_stat.level = 3;
-		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
-		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_ROAMING;
-		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
-		strcpy_s(clients[i]._obj_stat._name, "Devil");
-	}
+
+	//for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
+	//{
+	//	// Skeleton
+	//	clients[i]._s_state = ST_INGAME;
+	//	clients[i]._obj_stat.race = RACE::RACE_SKELETON;
+	//	clients[i]._obj_stat.level = 1;
+	//	clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
+	//	clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
+	//	clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
+	//	clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
+	//	strcpy_s(clients[i]._obj_stat._name, "Skeleton");
+	//}
+	//for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
+	//{
+	//	// Wraith
+	//	clients[i]._s_state = ST_INGAME;
+	//	clients[i]._obj_stat.race = RACE::RACE_WRIATH;
+	//	clients[i]._obj_stat.level = 2;
+	//	clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
+	//	clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
+	//	clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
+	//	clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
+	//	strcpy_s(clients[i]._obj_stat._name, "Wriath");
+	//}
+	//for (int i = MAX_USER + 100000; i < MAX_USER + 150000; ++i)
+	//{
+	//	// Devil
+	//	clients[i]._s_state = ST_INGAME;
+	//	clients[i]._obj_stat.race = RACE::RACE_DEVIL;
+	//	clients[i]._obj_stat.level = 3;
+	//	clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
+	//	clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
+	//	clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_ROAMING;
+	//	clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
+	//	strcpy_s(clients[i]._obj_stat._name, "Devil");
+	//}
 	
 }
 
+
 int main()
 {
-	//Init_npc();
+	Init_npc();
 
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);
