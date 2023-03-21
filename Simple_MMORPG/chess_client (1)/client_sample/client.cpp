@@ -221,7 +221,7 @@ void client_initialize()
 	CharPicture = new sf::Texture;
 	ChatUI = new sf::Texture;
 
-	board->loadFromFile("Texture/Map/map.bmp");
+	board->loadFromFile("Texture/Map/mymap.png");
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
 	wraith->loadFromFile("Texture/Monster/wraith.png");
@@ -308,7 +308,32 @@ void ProcessPacket(char* ptr)
 			players[id].show();
 			strcpy_s(players[id].my_name, packet->name);
 		}
-
+		/*else {
+			switch (packet->race)
+			{
+			case RACE_SKELETON:
+				npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 , *HPBar, 0, 0, 89, 10 };
+				break;
+			case RACE_WRIATH:
+				npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 , *HPBar, 0, 0, 89, 10 };
+				break;
+			case RACE_DEVIL:
+				npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 , *HPBar, 0, 0, 89, 10 };
+				break;
+			case RACE_DIABLO:
+				npcs[id - MAX_USER] = OBJECT{ *diablo, 0, 0, 135, 158 , *HPBar, 0, 0, 89, 10 };
+				break;
+			default:
+				break;
+			}
+			npcs[id - MAX_USER].move(packet->x, packet->y);
+			char lev[10];
+			sprintf_s(lev, "%d", packet->level);
+			npcs[id - MAX_USER].set_level(lev);
+			npcs[id - MAX_USER].set_name(packet->name, false);
+			npcs[id - MAX_USER].set_info(packet->id, packet->level, packet->hp, packet->hpmax, packet->x, packet->y);
+			npcs[id - MAX_USER].show();
+		}*/
 		break;
 	}
 	case SC_MOVE_OBJECT:
@@ -334,7 +359,14 @@ void ProcessPacket(char* ptr)
 
 	case SC_REMOVE_OBJECT:
 	{
-		
+		SC_REMOVE_OBJECT_PACKET* packet = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(ptr);
+		int other_id = packet->id;
+		if (other_id == avatar.id) 
+			avatar.hide();
+		else if (other_id < MAX_USER) 
+			players[other_id].hide();
+		else 
+			npcs[other_id - MAX_USER].hide();
 		break;
 	}
 	case SC_PARTY:
@@ -393,7 +425,7 @@ void client_main()
 	if (recv_result != sf::Socket::NotReady)
 		if (received > 0) process_data(net_buf, received);
 
-	for (int i = 0; i < SCREEN_WIDTH; ++i)
+	for (int i = 0; i < SCREEN_WIDTH; ++i) {
 		for (int j = 0; j < SCREEN_HEIGHT; ++j)
 		{
 			int tile_x = i + g_left_x;
@@ -404,8 +436,8 @@ void client_main()
 				MapObj.a_move(65 * i + 1, 65 * j + 1);
 				MapObj.a_draw();
 			}
-
 		}
+	}
 
 	avatar.draw_ui();
 	for (int i = 0; i < 8; ++i)

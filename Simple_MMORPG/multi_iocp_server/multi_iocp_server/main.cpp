@@ -21,14 +21,14 @@
 #include "protocol.h"
 #include "Enum.h"
 
-constexpr int RANGE = 15;
+constexpr int RANGE = 7;
 
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
 using namespace std;
 
-
 void do_timer();
+void Init_npc();
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
@@ -74,14 +74,8 @@ public:
 	}
 };
 
-class SESSION {
-	OVER_EXP _recv_over;
-
-public:
-	mutex	_lock;
-	SESSION_STATE _s_state;
-	EVENT_TYPE _ev;
-	SOCKET _socket;
+struct OBJ_STAT
+{
 	int		_id;
 	int		_db_id;
 	short	x, y;
@@ -92,41 +86,37 @@ public:
 	int		hp, hpmax;
 	short	attack_type;
 	short	move_type;
+};
+
+class SESSION {
+	OVER_EXP _recv_over;
+
+public:
+	// lock
+	mutex	_lock;
+	mutex	_ViewListLock;
+
+	SESSION_STATE _s_state;
+	EVENT_TYPE _ev;
+	SOCKET _socket;
+	OBJ_STAT _obj_stat;
 	unordered_set <int> view_list;
-	mutex	vl;
-	mutex	vm_l;
-	mutex	run_l;
-	bool isNpcDead;
-	bool isPlay;
+
 	ATTACKTYPE _attacktype;
 	MOVETYPE _movetype;
-	short _target_id;
-	vector<int> my_party;
 	chrono::system_clock::time_point next_move_time;
 	int		_prev_remain;
-	short   _skill_cnt;
+
 public:
 	SESSION()
 	{
-		_id = -1;
+		_obj_stat._id = -1;
 		_socket = 0;
-		x = rand() % W_WIDTH;
-		y = rand() % W_HEIGHT;
-		_name[0] = 0;
-		race = RACE::RACE_END;
-		level = 1;
-		exp = 0;
-		maxexp = level * 100;
-		hpmax = level * 100;
-		hp = hpmax;
-		attack_type = ATTACKTYPE::ATTACKTYPE_END;
-		move_type = MOVETYPE::MOVETYPE_END;
+		_obj_stat.x = rand() % W_WIDTH;
+		_obj_stat.y = rand() % W_HEIGHT;
+		_obj_stat._name[0] = 0;
+		_obj_stat.race = RACE::RACE_END;
 		_s_state = ST_FREE;
-		_prev_remain = 0;
-		next_move_time = chrono::system_clock::now() + chrono::seconds(1);
-		isNpcDead = false;
-		isPlay = false;
-		_target_id = 10000;
 	}
 
 	~SESSION() {}
@@ -152,12 +142,12 @@ public:
 		p.size = sizeof(SC_LOGIN_OK_PACKET);
 		p.type = SC_LOGIN_OK;
 		///////////////DB에 있다면 DB에서 꺼내올 것들 //////////////////
-		p.id = _id;
-		p.x = x;
-		p.y = y;
-		p.level = level;
-		p.exp = exp;
-		p.hpmax = hpmax;
+		p.id = _obj_stat._id;
+		p.x = _obj_stat.x;
+		p.y = _obj_stat.y;
+		p.level = _obj_stat.level;
+		p.exp = _obj_stat.exp;
+		p.hpmax = _obj_stat.hpmax;
 		p.hp = p.hpmax;
 		p.race = RACE::RACE_PLAYER;
 		////////////////////////////////////////////////////////////////
@@ -165,8 +155,8 @@ public:
 	}
 	void send_move_packet(int c_id, int client_time);
 	void send_add_object(int c_id);
-	void send_remove_object(int c_id);
 	void send_chat_packet(int c_id, const char* mess);
+	void Send_Remove_Packet(int c_id);
 };
 
 array<SESSION, MAX_USER + NUM_NPC> clients;
@@ -194,7 +184,8 @@ void activate_npc(int id)
 
 int distance(int a, int b)
 {
-	return abs(clients[a].x - clients[b].x) + abs(clients[a].y - clients[b].y);
+	return abs(clients[a]._obj_stat.x - clients[b]._obj_stat.x)
+		+ abs(clients[a]._obj_stat.y - clients[b]._obj_stat.y);
 }
 
 void SESSION::send_move_packet(int c_id, int client_time)
@@ -203,8 +194,8 @@ void SESSION::send_move_packet(int c_id, int client_time)
 	p.id = c_id;
 	p.size = sizeof(SC_MOVE_OBJECT_PACKET);
 	p.type = SC_MOVE_OBJECT;
-	p.x = clients[c_id].x;
-	p.y = clients[c_id].y;
+	p.x = clients[c_id]._obj_stat.x;
+	p.y = clients[c_id]._obj_stat.y;
 	p.client_time = client_time;
 	do_send(&p);
 }
@@ -215,22 +206,13 @@ void SESSION::send_add_object(int c_id)
 	p.id = c_id;
 	p.size = sizeof(SC_ADD_OBJECT_PACKET);
 	p.type = SC_ADD_OBJECT;
-	p.x = clients[c_id].x;
-	p.y = clients[c_id].y;
-	p.race = clients[c_id].race;
-	p.level = clients[c_id].level;
-	p.hp = clients[c_id].hp;
-	p.hpmax = clients[c_id].hpmax;
-	strcpy_s(p.name, clients[c_id]._name);
-	do_send(&p);
-}
-
-void SESSION::send_remove_object(int c_id)
-{
-	SC_REMOVE_OBJECT_PACKET p;
-	p.id = c_id;
-	p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
-	p.type = SC_REMOVE_OBJECT;
+	p.x = clients[c_id]._obj_stat.x;
+	p.y = clients[c_id]._obj_stat.y;
+	p.race = clients[c_id]._obj_stat.race;
+	p.level = clients[c_id]._obj_stat.level;
+	p.hp = clients[c_id]._obj_stat.hp;
+	p.hpmax = clients[c_id]._obj_stat.hpmax;
+	strcpy_s(p.name, clients[c_id]._obj_stat._name);
 	do_send(&p);
 }
 
@@ -241,6 +223,15 @@ void SESSION::send_chat_packet(int c_id, const char *mess)
 	p.size = sizeof(SC_CHAT_PACKET) - sizeof(p.mess) + strlen(mess) + 1;
 	p.type = SC_CHAT;
 	strcpy_s(p.mess, mess);
+	do_send(&p);
+}
+
+void SESSION::Send_Remove_Packet(int c_id)
+{
+	SC_REMOVE_OBJECT_PACKET p;
+	p.id = c_id;
+	p.size = sizeof(p);
+	p.type = SC_REMOVE_OBJECT;
 	do_send(&p);
 }
 
@@ -270,16 +261,17 @@ void process_packet(int c_id, char* packet)
 			break;
 
 		clients[c_id]._lock.lock();
-		strcpy_s(clients[c_id]._name, p->name);
-		clients[c_id]._id = c_id;
-		clients[c_id]._db_id = p->db_id;
+		strcpy_s(clients[c_id]._obj_stat._name, p->name);
+		clients[c_id]._obj_stat._id = c_id;
+		clients[c_id]._obj_stat._db_id = p->db_id;
 		clients[c_id].send_login_ok_packet();
 		clients[c_id]._s_state = ST_INGAME;
 		clients[c_id]._lock.unlock();
 
-		for (auto& pl : clients) {
+		for (int i = 0; i < MAX_USER; ++i) {
+			auto& pl = clients[i];
 			pl._lock.lock();
-			if (pl._id == c_id) {
+			if (pl._obj_stat._id == c_id) {
 				pl._lock.unlock();
 				continue;
 			}
@@ -287,20 +279,36 @@ void process_packet(int c_id, char* packet)
 				pl._lock.unlock();
 				continue;
 			}
+
 			// 나중엔 거리가 가까운애들만 추가
-			pl.send_add_object(c_id);
-			clients[c_id].send_add_object(pl._id);
+			if (RANGE >= distance(c_id, pl._obj_stat._id)) {
+				pl._ViewListLock.lock();
+				pl.view_list.insert(c_id);
+				pl._ViewListLock.unlock();
+				pl.send_add_object(c_id);
+			}		
 			pl._lock.unlock();
 		}
 
+		for (auto& obj : clients) {
+			if (obj._obj_stat._id == c_id) continue;
+			if (ST_INGAME != obj._s_state) continue;
+
+			if (RANGE >= distance(obj._obj_stat._id, c_id)) {
+				clients[c_id]._ViewListLock.lock();
+				clients[c_id].view_list.insert(obj._obj_stat._id);
+				clients[c_id]._ViewListLock.unlock();
+				clients[c_id].send_add_object(obj._obj_stat._id);
+			}
+		}
 		break;
 	}
 	case CS_MOVE: {
 		// TODO 시야처리
 		// LOCK FREE
 		CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
-		short x = clients[c_id].x;
-		short y = clients[c_id].y;
+		short x = clients[c_id]._obj_stat.x;
+		short y = clients[c_id]._obj_stat.y;
 
 		switch (p->direction) {
 		case 0: if (y > 0) y--; break;
@@ -308,16 +316,164 @@ void process_packet(int c_id, char* packet)
 		case 2: if (x > 0) x--; break;
 		case 3: if (x < W_WIDTH - 1) x++; break;
 		}
+			
+		clients[c_id]._obj_stat.x = x;
+		clients[c_id]._obj_stat.y = y;
 
-		clients[c_id].x = x;
-		clients[c_id].y = y;
+		clients[c_id]._ViewListLock.lock();
+		unordered_set<int> old_vl = clients[c_id].view_list;
+		clients[c_id]._ViewListLock.unlock();
 
-		for (auto& pl : clients) {
-			pl._lock.lock();
-			if (ST_INGAME == pl._s_state)
-				pl.send_move_packet(c_id, p->client_time);
-			pl._lock.unlock();
+		unordered_set<int> new_vl;
+		for (int i = 0; i < MAX_USER; ++i) {
+			if (ST_INGAME != clients[i]._s_state) continue;
+			if (c_id == clients[i]._obj_stat._id) continue;
+
+			if (RANGE > distance(c_id, i))
+				new_vl.insert(i);
 		}
+		clients[c_id].send_move_packet(c_id, 0);
+
+		for (auto pl : new_vl) {
+			// old_vl에 없는데 new_vl에 있으면 add패킷 보내기
+			if (0 == old_vl.count(pl)) {
+				clients[c_id].send_add_object(pl);
+				clients[c_id]._ViewListLock.lock();
+				clients[c_id].view_list.insert(pl);
+				clients[c_id]._ViewListLock.unlock();
+
+				clients[pl]._ViewListLock.lock();
+				if (0 == clients[pl].view_list.count(c_id)) {
+					clients[pl].send_add_object(c_id);
+					clients[pl].view_list.insert(c_id);
+					clients[pl]._ViewListLock.unlock();
+				}
+				else {
+					clients[pl]._ViewListLock.unlock();
+					clients[pl].send_move_packet(c_id, 0);
+				}
+			}
+			// old_vl에도 있고 new_vl에도 있으면 move패킷 보내기
+			else {
+				clients[pl]._ViewListLock.lock();
+				if (0 == clients[pl].view_list.count(c_id)) {
+					clients[pl].send_add_object(c_id);
+					clients[pl].view_list.insert(c_id);
+					clients[pl]._ViewListLock.unlock();
+				}
+				else {
+					clients[pl]._ViewListLock.unlock();
+					clients[pl].send_move_packet(c_id, 0);
+				}
+			}
+		}
+
+		for (auto pl : old_vl) {
+			// old에는 있는데 new에는 없으면 삭제
+			if (0 == new_vl.count(pl)) {
+				clients[c_id].Send_Remove_Packet(pl);
+				clients[c_id]._ViewListLock.lock();
+				clients[c_id].view_list.erase(pl);
+				clients[c_id]._ViewListLock.unlock();
+
+				clients[pl]._ViewListLock.lock();
+				if (0 == clients[pl].view_list.count(c_id)) {
+					clients[pl]._ViewListLock.unlock();
+				}
+				else {
+					clients[pl].Send_Remove_Packet(c_id);
+					clients[pl].view_list.erase(c_id);
+					clients[pl]._ViewListLock.unlock();
+				}
+			}
+		}
+
+//#pragma region NPC시야처리
+//		unordered_set<int> Old_ViewList;
+//		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
+//			if (ST_INGAME != clients[i]._s_state) continue;
+//			if (RANGE > distance(c_id, i)) Old_ViewList.insert(i);
+//		}
+//
+//		switch (p->direction) {
+//		case 0: if (y > 0) y--; break;
+//		case 1: if (y < W_HEIGHT - 1) y++; break;
+//		case 2: if (x > 0) x--; break;
+//		case 3: if (x < W_WIDTH - 1) x++; break;
+//		}
+//
+//		clients[c_id]._obj_stat.x = x;
+//		clients[c_id]._obj_stat.y = y;
+//
+//		//for (auto& pl : clients) {
+//		//	pl._lock.lock();
+//		//	if (ST_INGAME == pl._s_state)
+//		//		pl.send_move_packet(c_id, p->client_time);
+//		//	pl._lock.unlock();
+//		//}
+//
+//		unordered_set<int> New_ViewList;
+//		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
+//			if (ST_INGAME != clients[i]._s_state) continue;
+//			if (distance(c_id, i)) New_ViewList.insert(i);
+//		}
+//
+//		for (auto p_id : New_ViewList) {
+//			// viewlist에 없는데 NewViewList에 있다 -> viewlist에 추가 후 add패킷 전송
+//			if (0 == clients[c_id].view_list.count(p_id)) {
+//				clients[c_id].view_list.insert(p_id);
+//				clients[c_id].send_add_object(p_id);
+//			}
+//			// viewlist에 있고 NewViewList에도 있다 -> move패킷 전송
+//			else
+//				clients[c_id].send_move_packet(p_id, 0);
+//		}
+//		for (auto p_id : Old_ViewList) {
+//			// old에는 있는데 new에는 없다 -> 시야 밖으로 나갔으므로 remove패킷 보냄
+//			if (0 == New_ViewList.count(p_id)) {
+//				if (1 == clients[c_id].view_list.count(p_id)) {
+//					clients[c_id].view_list.erase(p_id);
+//
+//					clients[c_id].Send_Remove_Packet(p_id);
+//				}
+//			}
+//		}
+//#pragma endregion NPC시야처리
+//
+//#pragma region Player시야처리
+//		/*for (int i = 0; i < MAX_USER; ++i) {
+//			auto& pl = clients[i];
+//			if (pl._obj_stat._id == c_id) continue;
+//			pl._lock.lock();
+//			if (ST_INGAME != pl._s_state) {
+//				pl._lock.unlock();
+//				continue;
+//			}
+//			if (RANGE >= distance(c_id, pl._obj_stat._id)) {
+//				pl._ViewListLock.lock();
+//				pl.view_list.insert(c_id);
+//				pl._ViewListLock.unlock();
+//				pl.send_add_object(c_id);
+//			}
+//			pl._lock.unlock();
+//		}
+//		for (auto& pl : clients) {
+//			if (pl._obj_stat._id == c_id) continue;
+//			pl._lock.lock();
+//			if (ST_INGAME != pl._s_state) {
+//				pl._lock.unlock();
+//				continue;
+//			}
+//			if (RANGE >= distance(pl._obj_stat._id, c_id)) {
+//				clients[c_id]._ViewListLock.lock();
+//				clients[c_id].view_list.insert(pl._obj_stat._id);
+//				clients[c_id]._ViewListLock.unlock();
+//				clients[c_id].send_add_object(pl._obj_stat._id);
+//			}
+//			pl._lock.unlock();
+//		}*/
+//
+//#pragma endregion Player시야처리
 
 		break;
 	}
@@ -351,19 +507,16 @@ void disconnect(int c_id)
 	clients[c_id]._lock.unlock();
 
 	for (auto& pl : clients) {
-		if (pl._id == c_id) continue;
+		if (pl._obj_stat._id == c_id) continue;
 		pl._lock.lock();
 		if (pl._s_state != ST_INGAME) {
 			pl._lock.unlock();
 			continue;
 		}
-		SC_REMOVE_OBJECT_PACKET p;
-		p.id = c_id;
-		p.size = sizeof(p);
-		p.type = SC_REMOVE_OBJECT;
-		pl.do_send(&p);
+		pl.Send_Remove_Packet(c_id);	
 		pl._lock.unlock();
 	}
+
 }
 
 void do_worker()
@@ -390,10 +543,10 @@ void do_worker()
 			SOCKET c_socket = reinterpret_cast<SOCKET>(ex_over->_wsabuf.buf);
 			int client_id = get_new_client_id();
 			if (client_id != -1) {
-				clients[client_id].x = 0;
-				clients[client_id].y = 0;
-				clients[client_id]._id = client_id;
-				clients[client_id]._name[0] = 0;
+				clients[client_id]._obj_stat.x = 0;
+				clients[client_id]._obj_stat.y = 0;
+				clients[client_id]._obj_stat._id = client_id;
+				clients[client_id]._obj_stat._name[0] = 0;
 				clients[client_id]._prev_remain = 0;
 				clients[client_id]._socket = c_socket;
 				CreateIoCompletionPort(reinterpret_cast<HANDLE>(c_socket),
@@ -497,8 +650,55 @@ void do_timer()
 	}
 }
 
+void Init_npc()
+{
+	for (int i = MAX_USER; i < NUM_NPC + MAX_USER; ++i)
+		clients[i]._obj_stat._id = i;
+	cout << "NPC initialize Begin.\n";
+
+	for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
+	{
+		// Skeleton
+		clients[i]._s_state = ST_INGAME;
+		clients[i]._obj_stat.race = RACE::RACE_SKELETON;
+		clients[i]._obj_stat.level = 1;
+		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
+		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
+		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
+		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
+		strcpy_s(clients[i]._obj_stat._name, "Skeleton");
+	}
+	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
+	{
+		// Wraith
+		clients[i]._s_state = ST_INGAME;
+		clients[i]._obj_stat.race = RACE::RACE_WRIATH;
+		clients[i]._obj_stat.level = 2;
+		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
+		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
+		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
+		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
+		strcpy_s(clients[i]._obj_stat._name, "Wriath");
+	}
+	for (int i = MAX_USER + 100000; i < MAX_USER + 150000; ++i)
+	{
+		// Devil
+		clients[i]._s_state = ST_INGAME;
+		clients[i]._obj_stat.race = RACE::RACE_DEVIL;
+		clients[i]._obj_stat.level = 3;
+		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
+		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
+		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_ROAMING;
+		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
+		strcpy_s(clients[i]._obj_stat._name, "Devil");
+	}
+	
+}
+
 int main()
 {
+	//Init_npc();
+
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);
 	g_s_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
