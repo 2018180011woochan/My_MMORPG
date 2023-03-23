@@ -221,7 +221,7 @@ void client_initialize()
 	CharPicture = new sf::Texture;
 	ChatUI = new sf::Texture;
 
-	board->loadFromFile("Texture/Map/mymap.png");
+	board->loadFromFile("Texture/Map/map.bmp");
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
 	wraith->loadFromFile("Texture/Monster/wraith.png");
@@ -283,6 +283,10 @@ void ProcessPacket(char* ptr)
 		avatar.exp = packet->exp;
 		strcpy_s(avatar.my_name, Nickname);
 
+		avatar.move(packet->x, packet->y);
+		g_left_x = packet->x - 8;
+		g_top_y = packet->y - 8;
+		//players[packet->id].move(packet->x, packet->y);
 		avatar.show();
 
 		break;

@@ -184,16 +184,16 @@ void SESSION::send_login_ok_packet(int c_id)
 	/*p.x = _obj_stat.x;
 	p.y = _obj_stat.y;*/
 
-	p.x = 1;
-	p.y = 1; 
-	clients[p.id]._obj_stat.x = p.x;
-	clients[p.id]._obj_stat.y = p.y;
-
-	//p.x = rand() % W_WIDTH;
-	//p.y = rand() % W_HEIGHT;
-
+	//p.x = 1;
+	//p.y = 1; 
 	//clients[p.id]._obj_stat.x = p.x;
 	//clients[p.id]._obj_stat.y = p.y;
+
+	p.x = rand() % W_WIDTH;
+	p.y = rand() % W_HEIGHT;
+
+	clients[p.id]._obj_stat.x = p.x;
+	clients[p.id]._obj_stat.y = p.y;
 
 	p.level = clients[c_id]._obj_stat.level;
 	p.exp = clients[c_id]._obj_stat.exp;
@@ -345,7 +345,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._ViewListLock.unlock();
 
 		unordered_set<int> new_vl;
-		for (int i = 0; i < MAX_USER; ++i) {
+		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
 			if (ST_INGAME != clients[i]._s_state) continue;
 			if (c_id == clients[i]._obj_stat._id) continue;
 
@@ -355,6 +355,7 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].send_move_packet(c_id, 0);
 
 		for (auto pl : new_vl) {
+
 			// old_vl에 없는데 new_vl에 있으면 add패킷 보내기
 			if (0 == old_vl.count(pl)) {
 				clients[c_id].send_add_object(pl);
@@ -362,6 +363,9 @@ void process_packet(int c_id, char* packet)
 				clients[c_id].view_list.insert(pl);
 				clients[c_id]._ViewListLock.unlock();
 
+				
+				if (clients[pl]._obj_stat.race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+					continue;
 				clients[pl]._ViewListLock.lock();
 				if (0 == clients[pl].view_list.count(c_id)) {
 					clients[pl].send_add_object(c_id);
@@ -375,6 +379,9 @@ void process_packet(int c_id, char* packet)
 			}
 			// old_vl에도 있고 new_vl에도 있으면 move패킷 보내기
 			else {
+				if (clients[pl]._obj_stat.race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+					continue;
+
 				clients[pl]._ViewListLock.lock();
 				if (0 == clients[pl].view_list.count(c_id)) {
 					clients[pl].send_add_object(c_id);
@@ -396,6 +403,8 @@ void process_packet(int c_id, char* packet)
 				clients[c_id].view_list.erase(pl);
 				clients[c_id]._ViewListLock.unlock();
 
+				if (clients[pl]._obj_stat.race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+					continue;
 				clients[pl]._ViewListLock.lock();
 				if (0 == clients[pl].view_list.count(c_id)) {
 					clients[pl]._ViewListLock.unlock();
@@ -645,6 +654,7 @@ void Move_NPC(int _npc_id)
 	}
 
 	for (auto p_id : new_vl) {
+		//if (clients[p_id]._obj_stat.race != RACE::RACE_PLAYER) continue;
 		clients[p_id]._ViewListLock.lock();
 		if (0 == clients[p_id].view_list.count(_npc_id)) {
 			clients[p_id].view_list.insert(_npc_id);
@@ -657,6 +667,7 @@ void Move_NPC(int _npc_id)
 		}
 	}
 	for (auto p_id : old_vl) {
+		//if (clients[p_id]._obj_stat.race != RACE::RACE_PLAYER) continue;
 		if (0 == new_vl.count(p_id)) {
 			clients[p_id]._ViewListLock.lock();
 			if (clients[p_id].view_list.count(_npc_id) == 1) {
@@ -738,7 +749,7 @@ void Init_npc()
 		clients[i]._obj_stat._id = i;
 	cout << "NPC initialize Begin.\n";
 
-	for (int i = MAX_USER; i < MAX_USER + 10; ++i)
+	for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
 	{
 		// Skeleton
 		clients[i]._s_state = ST_INGAME;
@@ -748,8 +759,10 @@ void Init_npc()
 		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
 		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
 		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
-		clients[i]._obj_stat.x = rand() % 10;
-		clients[i]._obj_stat.y = rand() % 10;
+		//clients[i]._obj_stat.x = rand() % 10;
+		//clients[i]._obj_stat.y = rand() % 10;
+		clients[i]._obj_stat.x = rand() % W_WIDTH;
+		clients[i]._obj_stat.y = rand() % W_WIDTH;
 		strcpy_s(clients[i]._obj_stat._name, "Skeleton");
 	}
 
