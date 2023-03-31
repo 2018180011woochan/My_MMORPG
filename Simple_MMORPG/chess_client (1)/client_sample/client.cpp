@@ -518,6 +518,12 @@ int main()
 				case sf::Keyboard::Down:
 					direction = DIRECTION::DIRECTION_DOWN;
 					break;
+				case sf::Keyboard::A:	// АјАн
+					CS_ATTACK_PACKET p;
+					p.size = sizeof(CS_ATTACK_PACKET);
+					p.type = CS_ATTACK;
+					send_packet(&p);
+					break;
 				case sf::Keyboard::Escape:
 					window.close();
 					break;

@@ -35,6 +35,8 @@ enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND, OP_RANDOM_MOVE };
 
+vector<int> ConnectedPlayer;
+
 struct TIMER_EVENT {
 	int object_id;
 	EVENT_TYPE ev;
@@ -184,16 +186,16 @@ void SESSION::send_login_ok_packet(int c_id)
 	/*p.x = _obj_stat.x;
 	p.y = _obj_stat.y;*/
 
-	//p.x = 1;
-	//p.y = 1; 
-	//clients[p.id]._obj_stat.x = p.x;
-	//clients[p.id]._obj_stat.y = p.y;
-
-	p.x = rand() % W_WIDTH;
-	p.y = rand() % W_HEIGHT;
-
+	p.x = 1;
+	p.y = 1; 
 	clients[p.id]._obj_stat.x = p.x;
 	clients[p.id]._obj_stat.y = p.y;
+
+	//p.x = rand() % W_WIDTH;
+	//p.y = rand() % W_HEIGHT;
+
+	//clients[p.id]._obj_stat.x = p.x;
+	//clients[p.id]._obj_stat.y = p.y;
 
 	p.level = clients[c_id]._obj_stat.level;
 	p.exp = clients[c_id]._obj_stat.exp;
@@ -282,7 +284,10 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._obj_stat._db_id = p->db_id;
 		clients[c_id].send_login_ok_packet(c_id);
 		clients[c_id]._s_state = ST_INGAME;
+		clients[c_id]._obj_stat.race = RACE_PLAYER;
 		clients[c_id]._lock.unlock();
+
+		ConnectedPlayer.push_back(c_id);
 
 		for (int i = 0; i < MAX_USER; ++i) {
 			auto& pl = clients[i];
@@ -416,98 +421,13 @@ void process_packet(int c_id, char* packet)
 				}
 			}
 		}
-
-//#pragma region NPC시야처리
-//		unordered_set<int> Old_ViewList;
-//		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
-//			if (ST_INGAME != clients[i]._s_state) continue;
-//			if (RANGE > distance(c_id, i)) Old_ViewList.insert(i);
-//		}
-//
-//		switch (p->direction) {
-//		case 0: if (y > 0) y--; break;
-//		case 1: if (y < W_HEIGHT - 1) y++; break;
-//		case 2: if (x > 0) x--; break;
-//		case 3: if (x < W_WIDTH - 1) x++; break;
-//		}
-//
-//		clients[c_id]._obj_stat.x = x;
-//		clients[c_id]._obj_stat.y = y;
-//
-//		//for (auto& pl : clients) {
-//		//	pl._lock.lock();
-//		//	if (ST_INGAME == pl._s_state)
-//		//		pl.send_move_packet(c_id, p->client_time);
-//		//	pl._lock.unlock();
-//		//}
-//
-//		unordered_set<int> New_ViewList;
-//		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
-//			if (ST_INGAME != clients[i]._s_state) continue;
-//			if (distance(c_id, i)) New_ViewList.insert(i);
-//		}
-//
-//		for (auto p_id : New_ViewList) {
-//			// viewlist에 없는데 NewViewList에 있다 -> viewlist에 추가 후 add패킷 전송
-//			if (0 == clients[c_id].view_list.count(p_id)) {
-//				clients[c_id].view_list.insert(p_id);
-//				clients[c_id].send_add_object(p_id);
-//			}
-//			// viewlist에 있고 NewViewList에도 있다 -> move패킷 전송
-//			else
-//				clients[c_id].send_move_packet(p_id, 0);
-//		}
-//		for (auto p_id : Old_ViewList) {
-//			// old에는 있는데 new에는 없다 -> 시야 밖으로 나갔으므로 remove패킷 보냄
-//			if (0 == New_ViewList.count(p_id)) {
-//				if (1 == clients[c_id].view_list.count(p_id)) {
-//					clients[c_id].view_list.erase(p_id);
-//
-//					clients[c_id].Send_Remove_Packet(p_id);
-//				}
-//			}
-//		}
-//#pragma endregion NPC시야처리
-//
-//#pragma region Player시야처리
-//		/*for (int i = 0; i < MAX_USER; ++i) {
-//			auto& pl = clients[i];
-//			if (pl._obj_stat._id == c_id) continue;
-//			pl._lock.lock();
-//			if (ST_INGAME != pl._s_state) {
-//				pl._lock.unlock();
-//				continue;
-//			}
-//			if (RANGE >= distance(c_id, pl._obj_stat._id)) {
-//				pl._ViewListLock.lock();
-//				pl.view_list.insert(c_id);
-//				pl._ViewListLock.unlock();
-//				pl.send_add_object(c_id);
-//			}
-//			pl._lock.unlock();
-//		}
-//		for (auto& pl : clients) {
-//			if (pl._obj_stat._id == c_id) continue;
-//			pl._lock.lock();
-//			if (ST_INGAME != pl._s_state) {
-//				pl._lock.unlock();
-//				continue;
-//			}
-//			if (RANGE >= distance(pl._obj_stat._id, c_id)) {
-//				clients[c_id]._ViewListLock.lock();
-//				clients[c_id].view_list.insert(pl._obj_stat._id);
-//				clients[c_id]._ViewListLock.unlock();
-//				clients[c_id].send_add_object(pl._obj_stat._id);
-//			}
-//			pl._lock.unlock();
-//		}*/
-//
-//#pragma endregion Player시야처리
-
 		break;
 	}
 	case CS_ATTACK: {
-
+		for (auto monster : clients[c_id].view_list) {
+			if (distance(c_id, monster) < 2)
+				cout << "player " << c_id << ", monster " << monster << endl;
+		}
 		break;
 	}
 	case CS_CHAT:
@@ -688,18 +608,25 @@ void do_ai_ver_heat_beat()
 
 		for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
 		{
-			for (int j = 0; j < MAX_USER; ++j) {
-				if (clients[j]._s_state != ST_INGAME) break;
-				if (distance(i, j) < RANGE)
+			for (auto& c_id : ConnectedPlayer)
+			{
+				if (distance(i, c_id) < RANGE)
 				{
 					auto ex_over = new OVER_EXP;
 					ex_over->_comp_type = OP_RANDOM_MOVE;
 					PostQueuedCompletionStatus(g_h_iocp, 1, i, &ex_over->_over);
 				}
+				else if (distance(i, c_id) < RANGE + 1)
+				{
+					clients[c_id]._ViewListLock.lock();
+					clients[c_id].view_list.erase(i);
+					clients[c_id]._ViewListLock.unlock();
+					clients[c_id].Send_Remove_Packet(i);
+				}
 			}
 			
-		}
-		
+						
+		}		
 		auto end_t = chrono::system_clock::now();
 		auto ai_t = end_t - start_t;
 		this_thread::sleep_until(start_t + chrono::seconds(1));
@@ -726,30 +653,13 @@ void ShowError(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode)
 	}
 }
 
-void do_timer()
-{
-	while (true)
-	{
-		this_thread::sleep_for(1ms); //Sleep(1);
-
-		for (int i = 0; i < NUM_NPC; ++i) {
-			int npc_id = MAX_USER + i;
-			OVER_EXP* over = new OVER_EXP();
-			over->_comp_type = COMP_TYPE::OP_RANDOM_MOVE;
-			PostQueuedCompletionStatus(g_h_iocp, 1, npc_id, &over->_over);
-			//random_move_npc(ev.obj_id);
-			//add_timer(ev.obj_id, ev.event_id, 1000);
-		}
-	}
-}
-
 void Init_npc()
 {
 	for (int i = MAX_USER; i < NUM_NPC + MAX_USER; ++i)
 		clients[i]._obj_stat._id = i;
 	cout << "NPC initialize Begin.\n";
 
-	for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
+	for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
 	{
 		// Skeleton
 		clients[i]._s_state = ST_INGAME;
@@ -765,6 +675,32 @@ void Init_npc()
 		clients[i]._obj_stat.y = rand() % W_WIDTH;
 		strcpy_s(clients[i]._obj_stat._name, "Skeleton");
 	}
+	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
+	{
+		// Wraith
+		clients[i]._s_state = ST_INGAME;
+		clients[i]._obj_stat.race = RACE::RACE_WRIATH;
+		clients[i]._obj_stat.level = 2;
+		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
+		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
+		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
+		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
+		strcpy_s(clients[i]._obj_stat._name, "Wriath");
+	}
+	for (int i = MAX_USER + 100000; i < MAX_USER + NUM_NPC; ++i)
+	{
+		// Devil
+		clients[i]._s_state = ST_INGAME;
+		clients[i]._obj_stat.race = RACE::RACE_DEVIL;
+		clients[i]._obj_stat.level = 3;
+		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
+		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
+		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_ROAMING;
+		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
+		strcpy_s(clients[i]._obj_stat._name, "Devil");
+	}
+
+	cout << "NPC Initialization complete.\n";
 
 	//for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
 	//{
