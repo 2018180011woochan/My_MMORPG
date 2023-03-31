@@ -27,9 +27,9 @@ constexpr int RANGE = 7;
 #pragma comment(lib, "MSWSock.lib")
 using namespace std;
 
-void do_timer();
 void Init_npc();
 void Move_NPC(int _npc_id);
+void Hit_NPC(int _p_id, int n_id);
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
@@ -197,10 +197,17 @@ void SESSION::send_login_ok_packet(int c_id)
 	//clients[p.id]._obj_stat.x = p.x;
 	//clients[p.id]._obj_stat.y = p.y;
 
-	p.level = clients[c_id]._obj_stat.level;
-	p.exp = clients[c_id]._obj_stat.exp;
-	p.hpmax = clients[c_id]._obj_stat.hpmax;
-	p.hp = p.hpmax;
+	// 나중에 DB에서 이 정보 꺼내온다
+	clients[p.id]._obj_stat.level = 1;
+	clients[p.id]._obj_stat.exp = 0;
+	clients[p.id]._obj_stat.hpmax = clients[p.id]._obj_stat.level * 500;
+	clients[p.id]._obj_stat.hp = clients[p.id]._obj_stat.hpmax;
+	clients[p.id]._obj_stat.race = RACE::RACE_PLAYER;
+
+	p.level = 1;
+	p.exp = 0;
+	p.hpmax = clients[p.id]._obj_stat.level * 500;
+	p.hp = clients[p.id]._obj_stat.hpmax;
 	p.race = RACE::RACE_PLAYER;
 	////////////////////////////////////////////////////////////////
 	do_send(&p);
@@ -424,9 +431,16 @@ void process_packet(int c_id, char* packet)
 		break;
 	}
 	case CS_ATTACK: {
-		for (auto monster : clients[c_id].view_list) {
-			if (distance(c_id, monster) < 2)
-				cout << "player " << c_id << ", monster " << monster << endl;
+		for (auto& monster : clients[c_id].view_list) {
+			if (clients[monster]._obj_stat.race == RACE_PLAYER) continue;		// 플레이어끼리는 공격 불가
+			if (clients[monster]._s_state == ST_SLEEP) continue;	// 몬스터가 이미 죽었으면 공격 불가
+			if (distance(c_id, monster) < 2)	// 공격 성공
+			{
+				//cout << "player " << c_id << ", monster " << monster << endl;
+				Hit_NPC(c_id, monster);
+				
+			}
+				
 		}
 		break;
 	}
@@ -601,6 +615,27 @@ void Move_NPC(int _npc_id)
 	}
 }
 
+void Hit_NPC(int _p_id, int n_id)
+{
+	clients[n_id]._obj_stat.hp -= clients[_p_id]._obj_stat.level * 50;
+	cout << n_id << "의 체력이 " << clients[n_id]._obj_stat.hp << endl;
+
+	if (clients[n_id]._obj_stat.hp <= 0) {		// 몬스터 사망
+		clients[n_id]._s_state = ST_SLEEP;
+
+		//clients[_p_id]._ViewListLock.lock();
+		//clients[_p_id].view_list.erase(n_id);
+		//clients[_p_id]._ViewListLock.unlock();
+		clients[_p_id].Send_Remove_Packet(n_id);	// 공격을 한 플레이어에게 전송
+
+		// 시야 안의 모든 플레이어들에게 REMOVE패킷 전송
+		for (auto& pl : clients[_p_id].view_list) {
+			if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
+			clients[pl].Send_Remove_Packet(n_id);		// 근처 플레이어들에게도 전송
+		}
+	}
+}
+
 void do_ai_ver_heat_beat()
 {
 	for (;;) {
@@ -608,6 +643,7 @@ void do_ai_ver_heat_beat()
 
 		for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
 		{
+			if (clients[i]._s_state == ST_SLEEP) continue;
 			for (auto& c_id : ConnectedPlayer)
 			{
 				if (distance(i, c_id) < RANGE)
@@ -671,8 +707,8 @@ void Init_npc()
 		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
 		//clients[i]._obj_stat.x = rand() % 10;
 		//clients[i]._obj_stat.y = rand() % 10;
-		clients[i]._obj_stat.x = rand() % W_WIDTH;
-		clients[i]._obj_stat.y = rand() % W_WIDTH;
+		/*clients[i]._obj_stat.x = rand() % W_WIDTH;
+		clients[i]._obj_stat.y = rand() % W_WIDTH;*/
 		strcpy_s(clients[i]._obj_stat._name, "Skeleton");
 	}
 	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
@@ -702,42 +738,7 @@ void Init_npc()
 
 	cout << "NPC Initialization complete.\n";
 
-	//for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
-	//{
-	//	// Skeleton
-	//	clients[i]._s_state = ST_INGAME;
-	//	clients[i]._obj_stat.race = RACE::RACE_SKELETON;
-	//	clients[i]._obj_stat.level = 1;
-	//	clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
-	//	clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-	//	clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
-	//	clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
-	//	strcpy_s(clients[i]._obj_stat._name, "Skeleton");
-	//}
-	//for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
-	//{
-	//	// Wraith
-	//	clients[i]._s_state = ST_INGAME;
-	//	clients[i]._obj_stat.race = RACE::RACE_WRIATH;
-	//	clients[i]._obj_stat.level = 2;
-	//	clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
-	//	clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-	//	clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
-	//	clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
-	//	strcpy_s(clients[i]._obj_stat._name, "Wriath");
-	//}
-	//for (int i = MAX_USER + 100000; i < MAX_USER + 150000; ++i)
-	//{
-	//	// Devil
-	//	clients[i]._s_state = ST_INGAME;
-	//	clients[i]._obj_stat.race = RACE::RACE_DEVIL;
-	//	clients[i]._obj_stat.level = 3;
-	//	clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
-	//	clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-	//	clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_ROAMING;
-	//	clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
-	//	strcpy_s(clients[i]._obj_stat._name, "Devil");
-	//}
+	
 	
 }
 
