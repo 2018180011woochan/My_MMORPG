@@ -21,7 +21,7 @@
 #include "protocol.h"
 #include "Enum.h"
 
-constexpr int RANGE = 7;
+constexpr int RANGE = 15;
 
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
@@ -30,6 +30,7 @@ using namespace std;
 void Init_npc();
 void Move_NPC(int _npc_id);
 void Hit_NPC(int _p_id, int n_id);
+void Combat_Reward(int p_id, int n_id);
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
@@ -145,6 +146,7 @@ public:
 	void send_add_object(int c_id);
 	void send_chat_packet(int c_id, const char* mess);
 	void Send_Remove_Packet(int c_id);
+	void Send_StatChange_Packet(int c_id, int n_id);
 };
 
 array<SESSION, MAX_USER + NUM_NPC> clients;
@@ -258,6 +260,19 @@ void SESSION::Send_Remove_Packet(int c_id)
 	p.size = sizeof(p);
 	p.type = SC_REMOVE_OBJECT;
 	do_send(&p);
+}
+
+void SESSION::Send_StatChange_Packet(int c_id, int n_id)
+{
+	SC_STAT_CHANGE_PACKET packet;
+	packet.size = sizeof(SC_STAT_CHANGE_PACKET);
+	packet.type = SC_STAT_CHANGE;
+	packet.hp = clients[n_id]._obj_stat.hp;
+	packet.hpmax = clients[n_id]._obj_stat.hpmax;
+	packet.id = n_id;
+	packet.level = clients[n_id]._obj_stat.level;
+
+	clients[c_id].do_send(&packet);
 }
 
 void disconnect(int c_id);
@@ -431,17 +446,22 @@ void process_packet(int c_id, char* packet)
 		break;
 	}
 	case CS_ATTACK: {
-		for (auto& monster : clients[c_id].view_list) {
-			if (clients[monster]._obj_stat.race == RACE_PLAYER) continue;		// 플레이어끼리는 공격 불가
-			if (clients[monster]._s_state == ST_SLEEP) continue;	// 몬스터가 이미 죽었으면 공격 불가
-			if (distance(c_id, monster) < 2)	// 공격 성공
-			{
-				//cout << "player " << c_id << ", monster " << monster << endl;
-				Hit_NPC(c_id, monster);
-				
+		for (auto& obj : clients[c_id].view_list) {
+			if (clients[obj]._s_state == ST_SLEEP) continue;					// 몬스터가 이미 죽었으면 공격 불가
+			if (distance(c_id, obj) < 2) {										// 공격 성공
+				if (clients[obj]._obj_stat.race == RACE_PLAYER) continue;		// 플레이어끼리는 공격 불가
+				Hit_NPC(c_id, obj);
+
+				for (auto& pl : clients[c_id].view_list) {
+					if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
+					clients[pl].Send_StatChange_Packet(pl, obj);				// 공격한 플레이어 주변 플레이어들에게 결과 보냄
+					clients[pl].Send_StatChange_Packet(c_id, obj);				// 공격한 플레이어에게 전투 결과 보냄
+				}
 			}
-				
 		}
+
+		
+
 		break;
 	}
 	case CS_CHAT:
@@ -618,21 +638,36 @@ void Move_NPC(int _npc_id)
 void Hit_NPC(int _p_id, int n_id)
 {
 	clients[n_id]._obj_stat.hp -= clients[_p_id]._obj_stat.level * 50;
-	cout << n_id << "의 체력이 " << clients[n_id]._obj_stat.hp << endl;
 
 	if (clients[n_id]._obj_stat.hp <= 0) {		// 몬스터 사망
 		clients[n_id]._s_state = ST_SLEEP;
-
-		//clients[_p_id]._ViewListLock.lock();
-		//clients[_p_id].view_list.erase(n_id);
-		//clients[_p_id]._ViewListLock.unlock();
 		clients[_p_id].Send_Remove_Packet(n_id);	// 공격을 한 플레이어에게 전송
+
+		Combat_Reward(_p_id, n_id);
+		clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);	// 몬스터 처치하여 스탯이 변하면 플레이어에게 전송
 
 		// 시야 안의 모든 플레이어들에게 REMOVE패킷 전송
 		for (auto& pl : clients[_p_id].view_list) {
 			if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
-			clients[pl].Send_Remove_Packet(n_id);		// 근처 플레이어들에게도 전송
+			clients[pl].Send_Remove_Packet(n_id);			// 근처 플레이어들에게도 전송
+			clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송
+			
 		}
+	}
+}
+
+void Combat_Reward(int p_id, int n_id)
+{
+	// 몬스터 처치 보상
+	int rewardEXP = clients[n_id]._obj_stat.level * clients[n_id]._obj_stat.level * 2;
+	clients[p_id]._obj_stat.exp += rewardEXP;
+
+	if (clients[p_id]._obj_stat.exp > clients[p_id]._obj_stat.maxexp) {
+		clients[p_id]._obj_stat.level += 1;
+		clients[p_id]._obj_stat.hpmax = clients[p_id]._obj_stat.level * 100;
+		clients[p_id]._obj_stat.hp = clients[p_id]._obj_stat.hpmax;
+		clients[p_id]._obj_stat.maxexp = clients[p_id]._obj_stat.level * 100;
+		clients[p_id]._obj_stat.exp = 0;
 	}
 }
 

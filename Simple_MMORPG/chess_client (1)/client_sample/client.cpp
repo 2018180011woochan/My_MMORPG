@@ -23,6 +23,8 @@ using namespace std;
 #include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
 #include "..\..\multi_iocp_server\multi_iocp_server\Enum.h"
 
+enum NameColor { COLOR_GREEN, COLOR_YELLO, COLOR_RED };
+
 sf::TcpSocket socket;
 
 constexpr auto SCREEN_WIDTH = 16;
@@ -39,6 +41,7 @@ int g_top_y;
 char Nickname[20] = "temp";
 
 sf::RenderWindow* g_window;
+sf::Font g_font;
 
 void Login();
 
@@ -58,6 +61,9 @@ public:
 	int hp, hpmax;
 	char my_name[NAME_SIZE];
 
+	sf::Sprite m_HPBar;
+	//sf::Sprite ui_m_HPBar;
+
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
 		m_showing = false;
 		m_sprite.setTexture(t);
@@ -69,6 +75,10 @@ public:
 		m_showing = false;
 		m_sprite.setTexture(t);
 		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
+		m_HPBar.setTexture(hpbar);
+		m_HPBar.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
+		//ui_m_HPBar.setTexture(hpbar);
+		//ui_m_HPBar.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
 		set_name("NONAME", false);
 		set_level(0);
 	}
@@ -127,6 +137,9 @@ public:
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
 
+		m_HPBar.setPosition(rx, ry);
+		g_window->draw(m_HPBar);
+
 		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
 
@@ -164,7 +177,7 @@ public:
 	}
 
 	void set_name(const char str[], bool _ui) {
-		//m_name.setFont(g_font);
+		m_name.setFont(g_font);
 		m_name.setString(str);
 		m_name.setFillColor(sf::Color(255, 255, 0));
 		m_name.setStyle(sf::Text::Bold);
@@ -178,10 +191,31 @@ public:
 	}
 
 	void set_level(const char level[]){
-		//m_level.setFont(g_font);
+		m_level.setFont(g_font);
 		m_level.setString(level);
 		m_level.setFillColor(sf::Color(255, 255, 0));
 		m_level.setStyle(sf::Text::Bold);
+	}
+
+	void set_nameColor(NameColor _color)
+	{
+		switch (_color)
+		{
+		case COLOR_GREEN:
+			m_name.setFillColor(sf::Color(0, 255, 0));
+			m_level.setFillColor(sf::Color(0, 255, 0));
+			break;
+		case COLOR_YELLO:
+			m_name.setFillColor(sf::Color(255, 255, 0));
+			m_level.setFillColor(sf::Color(255, 255, 0));
+			break;
+		case COLOR_RED:
+			m_name.setFillColor(sf::Color(255, 0, 0));
+			m_level.setFillColor(sf::Color(255, 0, 0));
+			break;
+		default:
+			break;
+		}
 	}
 };
 
@@ -228,13 +262,18 @@ void client_initialize()
 	devil->loadFromFile("Texture/Monster/Devil.png");
 	diablo->loadFromFile("Texture/Monster/Diablo.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
-	HPBar->loadFromFile("Texture/User/HPBar.bmp");
+	HPBar->loadFromFile("Texture/User/hpbar.bmp");
 	Chatimage->loadFromFile("Texture/User/chaticon.png");
 	CharPicture->loadFromFile("Texture/User/CharPicture.png");
 	ChatUI->loadFromFile("Texture/User/chatui.bmp");
 
 	MapObj = OBJECT{ *board, 0, 0, 2000, 2000 };
 	
+	if (false == g_font.loadFromFile("cour.ttf")) {
+		cout << "Font Loading Error!\n";
+		exit(-1);
+	}
+
 	for (int i = 0; i < 8; ++i)
 	{
 		PlayerSkill.push_back(OBJECT{ *AttackSource, 0, 120, 60, 60 });
@@ -283,10 +322,15 @@ void ProcessPacket(char* ptr)
 		avatar.exp = packet->exp;
 		strcpy_s(avatar.my_name, Nickname);
 
+		avatar.set_name(Nickname, true);
+		char lev[10];
+		sprintf_s(lev, "%d", avatar.level);
+		avatar.set_level(lev);
+
 		avatar.move(packet->x, packet->y);
 		g_left_x = packet->x - 8;
 		g_top_y = packet->y - 8;
-		//players[packet->id].move(packet->x, packet->y);
+
 		avatar.show();
 
 		break;
@@ -336,6 +380,14 @@ void ProcessPacket(char* ptr)
 			npcs[id - MAX_USER].set_level(lev);
 			npcs[id - MAX_USER].set_name(packet->name, false);
 			npcs[id - MAX_USER].set_info(packet->id, packet->level, packet->hp, packet->hpmax, packet->x, packet->y);
+
+			if (avatar.level < npcs[id - MAX_USER].level)
+				npcs[id - MAX_USER].set_nameColor(NameColor::COLOR_RED);
+			if (avatar.level > npcs[id - MAX_USER].level)
+				npcs[id - MAX_USER].set_nameColor(NameColor::COLOR_GREEN);
+			if (avatar.level == npcs[id - MAX_USER].level)
+				npcs[id - MAX_USER].set_nameColor(NameColor::COLOR_YELLO);
+
 			npcs[id - MAX_USER].show();
 		}
 		break;
@@ -361,6 +413,61 @@ void ProcessPacket(char* ptr)
 
 	case SC_STAT_CHANGE:
 	{
+		SC_STAT_CHANGE_PACKET* my_packet = reinterpret_cast<SC_STAT_CHANGE_PACKET*>(ptr);
+		if (my_packet->id == avatar.id) {
+			if (avatar.level != my_packet->level) {
+				char lev[10];
+				sprintf_s(lev, "%d", my_packet->level);
+				avatar.set_level(lev);
+
+				for (int i = MAX_USER; i < NUM_NPC; ++i)
+				{
+					if (avatar.level < npcs[i].level)
+						npcs[i].set_nameColor(NameColor::COLOR_RED);
+					if (avatar.level > npcs[i].level)
+						npcs[i].set_nameColor(NameColor::COLOR_GREEN);
+					if (avatar.level == npcs[i].level)
+						npcs[i].set_nameColor(NameColor::COLOR_YELLO);
+				}
+			}
+
+			avatar.level = my_packet->level;
+			avatar.hp = my_packet->hp;
+			avatar.hpmax = my_packet->hpmax;
+
+			if (avatar.hp < 0)
+				avatar.hp = 0;
+
+			int curhp = 89 * avatar.hp / avatar.hpmax;
+
+			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+		}
+		else if (my_packet->id < MAX_USER) {
+			if (players[my_packet->id].level != my_packet->level) {
+				char lev[10];
+				sprintf_s(lev, "%d", my_packet->level);
+				players[my_packet->id].set_level(lev);
+			}
+			players[my_packet->id].level = my_packet->level;
+			players[my_packet->id].hp = my_packet->hp;
+			players[my_packet->id].hpmax = my_packet->hpmax;
+
+			if (players[my_packet->id].hp < 0)
+				players[my_packet->id].hp = 0;
+
+			int curhp = 89 * players[my_packet->id].hp / players[my_packet->id].hpmax;
+
+			players[my_packet->id].m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+
+
+		}
+		else {
+			npcs[my_packet->id - MAX_USER].level = my_packet->level;
+			npcs[my_packet->id - MAX_USER].hp = my_packet->hp;
+			npcs[my_packet->id - MAX_USER].hpmax = my_packet->hpmax;
+			int curhp = 89 * npcs[my_packet->id - MAX_USER].hp / npcs[my_packet->id - MAX_USER].hpmax;
+			npcs[my_packet->id - MAX_USER].m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+		}
 		break;
 	}
 
@@ -446,15 +553,14 @@ void client_main()
 		}
 	}
 
-	avatar.draw_ui();
-	for (int i = 0; i < 8; ++i)
-		PlayerSkill[i].idraw();
+	avatar.draw_hp();
+	//avatar.draw_ui();
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw_hp(); 
-	chaticon.a_move(0, 900);
-	chaticon.a_draw();
-	chatUI.a_move(600, 900);
-	chatUI.a_draw();
+	//chaticon.a_move(0, 900);
+	//chaticon.a_draw();
+	//chatUI.a_move(600, 900);
+	//chatUI.a_draw();
 }
 
 void send_packet(void *packet)
