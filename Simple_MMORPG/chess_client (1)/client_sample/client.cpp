@@ -255,7 +255,8 @@ void client_initialize()
 	CharPicture = new sf::Texture;
 	ChatUI = new sf::Texture;
 
-	board->loadFromFile("Texture/Map/map.bmp");
+	//board->loadFromFile("Texture/Map/map.bmp");
+	board->loadFromFile("Texture/Tile/Tile0.png");
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
 	wraith->loadFromFile("Texture/Monster/wraith.png");
@@ -539,19 +540,26 @@ void client_main()
 	if (recv_result != sf::Socket::NotReady)
 		if (received > 0) process_data(net_buf, received);
 
-	for (int i = 0; i < SCREEN_WIDTH; ++i) {
-		for (int j = 0; j < SCREEN_HEIGHT; ++j)
+	//MapObj.a_draw(); 
+	for (int i = -2; i < SCREEN_WIDTH; ++i) {
+		for (int j = -1; j < SCREEN_HEIGHT; ++j)
 		{
-			int tile_x = i + g_left_x;
-			int tile_y = j + g_top_y;
-			if ((tile_x < 0) || (tile_y < 0)) continue;
-			if (((tile_x + tile_y) % 2) <= 1) {
-
-				MapObj.a_move(65 * i + 1, 65 * j + 1);
-				MapObj.a_draw();
-			}
+			MapObj.a_draw();
+			MapObj.a_move(65 * i , 65 * j );	
 		}
 	}
+	//for (int i = 0; i < SCREEN_WIDTH; ++i) {
+	//	for (int j = 0; j < SCREEN_HEIGHT; ++j)
+	//	{
+	//		int tile_x = i + g_left_x;
+	//		int tile_y = j + g_top_y;
+	//		if ((tile_x < 0) || (tile_y < 0)) continue;
+	//		if (((tile_x + tile_y) % 2) <= 1) {
+	//			MapObj.a_draw();
+	//			MapObj.a_move(65 * i + 1, 65 * j + 1);			
+	//		}
+	//	}
+	//}
 
 	avatar.draw_hp();
 	//avatar.draw_ui();

@@ -638,6 +638,12 @@ void Move_NPC(int _npc_id)
 void Hit_NPC(int _p_id, int n_id)
 {
 	clients[n_id]._obj_stat.hp -= clients[_p_id]._obj_stat.level * 50;
+	
+	clients[_p_id].Send_StatChange_Packet(_p_id, n_id);	// 몬스터 공격하여 체력이 변하면 플레이어에게 전송
+	for (auto& pl : clients[_p_id].view_list) {
+		if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
+		clients[pl].Send_StatChange_Packet(pl, n_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송
+	}
 
 	if (clients[n_id]._obj_stat.hp <= 0) {		// 몬스터 사망
 		clients[n_id]._s_state = ST_SLEEP;
@@ -650,8 +656,7 @@ void Hit_NPC(int _p_id, int n_id)
 		for (auto& pl : clients[_p_id].view_list) {
 			if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
 			clients[pl].Send_Remove_Packet(n_id);			// 근처 플레이어들에게도 전송
-			clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송
-			
+			clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송	
 		}
 	}
 }
