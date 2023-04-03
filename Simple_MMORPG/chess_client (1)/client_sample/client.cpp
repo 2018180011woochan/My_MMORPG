@@ -272,8 +272,8 @@ void client_initialize()
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
 	//skeleton->loadFromFile("Texture/Tile/Tile22.png");
-	wraith->loadFromFile("Texture/Monster/wraith.png");
-	devil->loadFromFile("Texture/Monster/Devil.png");
+	wraith->loadFromFile("Texture/Monster/wraith2.png");
+	devil->loadFromFile("Texture/Monster/Devil2.png");
 	diablo->loadFromFile("Texture/Monster/Diablo.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
 	HPBar->loadFromFile("Texture/User/hpbar.bmp");
@@ -382,16 +382,17 @@ void ProcessPacket(char* ptr)
 				npcs[id - MAX_USER] = OBJECT{ *skeleton, 0, 0, 38, 73 , *HPBar, 0, 0, 89, 10 };
 				break;
 			case RACE_WRIATH:
-				npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 , *HPBar, 0, 0, 89, 10 };
+				//npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 , *HPBar, 0, 0, 89, 10 };
+				npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 73, 73 , *HPBar, 0, 0, 89, 10 };
 				break;
 			case RACE_DEVIL:
-				npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 , *HPBar, 0, 0, 89, 10 };
+				//npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 , *HPBar, 0, 0, 89, 10 };
+				npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 73, 100 , *HPBar, 0, 0, 89, 10 };
 				break;
 			case RACE_DIABLO:
 				npcs[id - MAX_USER] = OBJECT{ *diablo, 0, 0, 135, 158 , *HPBar, 0, 0, 89, 10 };
 				break;
 			case RACE_BLOCK:
-				// 문제점 : 클라이언트에서 블록이 안생김
 				blocks[id] = OBJECT{ *Block, 0, 0, 2000, 2000 };
 				blocks[id].m_x = packet->x;
 				blocks[id].m_y = packet->y;
@@ -567,7 +568,6 @@ void client_main()
 	if (recv_result != sf::Socket::NotReady)
 		if (received > 0) process_data(net_buf, received);
 
-	//MapObj.a_draw(); 
 	for (int i = -2; i < SCREEN_WIDTH; ++i) {
 		for (int j = -1; j < SCREEN_HEIGHT; ++j)
 		{
@@ -575,24 +575,13 @@ void client_main()
 			MapObj.a_move(65 * i , 65 * j );	
 		}
 	}
-	//for (int i = 0; i < SCREEN_WIDTH; ++i) {
-	//	for (int j = 0; j < SCREEN_HEIGHT; ++j)
-	//	{
-	//		int tile_x = i + g_left_x;
-	//		int tile_y = j + g_top_y;
-	//		if ((tile_x < 0) || (tile_y < 0)) continue;
-	//		if (((tile_x + tile_y) % 2) <= 1) {
-	//			MapObj.a_draw();
-	//			MapObj.a_move(65 * i + 1, 65 * j + 1);			
-	//		}
-	//	}
-	//}
+	for (auto& bl : blocks) bl.draw_block();
+
 
 	avatar.draw_hp();
 	//avatar.draw_ui();
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw_hp(); 
-	for (auto& bl : blocks) bl.draw_block();
 	//chaticon.a_move(0, 900);
 	//chaticon.a_draw();
 	//chatUI.a_move(600, 900);

@@ -151,9 +151,10 @@ public:
 	void send_login_ok_packet(int c_id);
 	void send_move_packet(int c_id, int client_time);
 	void send_add_object(int c_id);
-	void send_add_block(int c_id);
+	void send_add_block(int _id);
 	void send_chat_packet(int c_id, const char* mess);
 	void Send_Remove_Packet(int c_id);
+	void Send_Remove_Block(int _id);
 	void Send_StatChange_Packet(int c_id, int n_id);
 };
 
@@ -258,14 +259,14 @@ void SESSION::send_add_object(int c_id)
 	do_send(&p);
 }
 
-void SESSION::send_add_block(int c_id)
+void SESSION::send_add_block(int _id)
 {
 	SC_ADD_OBJECT_PACKET p;
-	p.id = c_id;
+	p.id = _id;
 	p.size = sizeof(SC_ADD_OBJECT_PACKET);
 	p.type = SC_ADD_OBJECT;
-	p.x = blocks[c_id].x;
-	p.y = blocks[c_id].y;
+	p.x = blocks[_id].x;
+	p.y = blocks[_id].y;
 	p.race = RACE_BLOCK;
 	do_send(&p);
 }
@@ -287,6 +288,10 @@ void SESSION::Send_Remove_Packet(int c_id)
 	p.size = sizeof(p);
 	p.type = SC_REMOVE_OBJECT;
 	do_send(&p);
+}
+
+void SESSION::Send_Remove_Block(int _id)
+{
 }
 
 void SESSION::Send_StatChange_Packet(int c_id, int n_id)
@@ -361,10 +366,6 @@ void process_packet(int c_id, char* packet)
 		}
 
 		for (auto& obj : clients) {
-			if (obj._obj_stat._id == 10001)
-			{
-				int a = 0;
-			}
 			if (obj._obj_stat._id == c_id) continue;
 			if (ST_INGAME != obj._s_state) continue;
 
@@ -375,6 +376,13 @@ void process_packet(int c_id, char* packet)
 				clients[c_id].send_add_object(obj._obj_stat._id);
 			}
 		}
+
+		for (auto& block : blocks) {
+			if (RANGE > distance_block(c_id, block.blockID))
+				clients[c_id].send_add_block(block.blockID);
+			else
+				clients[c_id].Send_Remove_Packet()
+		}
 		break;
 	}
 	case CS_MOVE: {
@@ -384,11 +392,16 @@ void process_packet(int c_id, char* packet)
 		short x = clients[c_id]._obj_stat.x;
 		short y = clients[c_id]._obj_stat.y;
 
+		// 길찾기 알고리즘 적용
 		switch (p->direction) {
-		case 0: if (y > 0) y--; break;
-		case 1: if (y < W_HEIGHT - 1) y++; break;
-		case 2: if (x > 0) x--; break;
-		case 3: if (x < W_WIDTH - 1) x++; break;
+		case 0: 
+			if (y > 0) y--; break;
+		case 1: 
+			if (y < W_HEIGHT - 1) y++; break;
+		case 2:
+			if (x > 0) x--; break;
+		case 3:
+			if (x < W_WIDTH - 1) x++; break;
 		}
 			
 		clients[c_id]._obj_stat.x = x;
