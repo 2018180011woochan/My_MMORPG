@@ -504,12 +504,17 @@ void ProcessPacket(char* ptr)
 	{
 		SC_REMOVE_OBJECT_PACKET* packet = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(ptr);
 		int other_id = packet->id;
-		if (other_id == avatar.id) 
-			avatar.hide();
-		else if (other_id < MAX_USER) 
-			players[other_id].hide();
-		else 
-			npcs[other_id - MAX_USER].hide();
+		if (packet->race == RACE_BLOCK)
+			blocks[other_id].hide();
+		else {
+			if (other_id == avatar.id)
+				avatar.hide();
+			else if (other_id < MAX_USER)
+				players[other_id].hide();
+			else
+				npcs[other_id - MAX_USER].hide();
+		}
+		
 		break;
 	}
 	case SC_PARTY:

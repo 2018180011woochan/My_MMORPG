@@ -98,6 +98,7 @@ struct SC_REMOVE_OBJECT_PACKET {
 	unsigned char size;
 	char	type;
 	int	id;
+	short race;
 };
 
 struct SC_MOVE_OBJECT_PACKET {

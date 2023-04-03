@@ -33,6 +33,7 @@ void Move_NPC(int _npc_id);
 void Hit_NPC(int _p_id, int n_id);
 void Combat_Reward(int p_id, int n_id);
 int distance_block(int a, int b);
+bool isMovePossible(int _id, DIRECTION _derection);
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
@@ -112,6 +113,7 @@ public:
 	SOCKET _socket;
 	OBJ_STAT _obj_stat;
 	unordered_set <int> view_list;
+	unordered_set <int> block_view_list;
 
 	ATTACKTYPE _attacktype;
 	MOVETYPE _movetype;
@@ -192,6 +194,48 @@ int distance_block(int a, int b)
 {
 	return abs(clients[a]._obj_stat.x - blocks[b].x)
 		+ abs(clients[a]._obj_stat.y - blocks[b].y);
+}
+
+bool isMovePossible(int _id, DIRECTION _direction)
+{
+	clients[_id]._ViewListLock.lock();
+	unordered_set<int> block_vl = clients[_id].block_view_list;
+	clients[_id]._ViewListLock.unlock();
+	
+	switch (_direction)
+	{
+	case DIRECTION_UP:
+		for (auto& bl : block_vl) {
+			if (((clients[_id]._obj_stat.x == blocks[bl].x + 2) || (clients[_id]._obj_stat.x == blocks[bl].x + 1)) &&
+				clients[_id]._obj_stat.y == (blocks[bl].y + 1))
+				return false;
+		}
+		break;
+	case DIRECTION_DOWN:
+		for (auto& bl : block_vl) {
+			if (((clients[_id]._obj_stat.x == blocks[bl].x + 2) || (clients[_id]._obj_stat.x == blocks[bl].x + 1)) &&
+				clients[_id]._obj_stat.y == (blocks[bl].y - 1))
+				return false;
+		}
+		break;
+	case DIRECTION_LEFT:
+		for (auto& bl : block_vl) {
+			if ((clients[_id]._obj_stat.x == blocks[bl].x + 3) &&
+				(clients[_id]._obj_stat.y == blocks[bl].y))
+				return false;
+		}
+		break;
+	case DIRECTION_RIGHT:
+		for (auto& bl : block_vl) {
+			if ((clients[_id]._obj_stat.x == blocks[bl].x) &&
+				(clients[_id]._obj_stat.y == blocks[bl].y))
+				return false;
+		}
+		break;
+	}
+	
+
+	return true;
 }
 
 void SESSION::send_login_ok_packet(int c_id)
@@ -287,11 +331,18 @@ void SESSION::Send_Remove_Packet(int c_id)
 	p.id = c_id;
 	p.size = sizeof(p);
 	p.type = SC_REMOVE_OBJECT;
+	p.race = clients[c_id]._obj_stat.race;
 	do_send(&p);
 }
 
 void SESSION::Send_Remove_Block(int _id)
 {
+	SC_REMOVE_OBJECT_PACKET p;
+	p.id = _id;
+	p.size = sizeof(p);
+	p.type = SC_REMOVE_OBJECT;
+	p.race = RACE_BLOCK;
+	do_send(&p);
 }
 
 void SESSION::Send_StatChange_Packet(int c_id, int n_id)
@@ -380,8 +431,7 @@ void process_packet(int c_id, char* packet)
 		for (auto& block : blocks) {
 			if (RANGE > distance_block(c_id, block.blockID))
 				clients[c_id].send_add_block(block.blockID);
-			else
-				clients[c_id].Send_Remove_Packet()
+			
 		}
 		break;
 	}
@@ -392,16 +442,17 @@ void process_packet(int c_id, char* packet)
 		short x = clients[c_id]._obj_stat.x;
 		short y = clients[c_id]._obj_stat.y;
 
-		// 길찾기 알고리즘 적용
+		
+
 		switch (p->direction) {
 		case 0: 
-			if (y > 0) y--; break;
+			if (isMovePossible(c_id, DIRECTION_UP) && y > 0) y--; break;
 		case 1: 
-			if (y < W_HEIGHT - 1) y++; break;
+			if (isMovePossible(c_id, DIRECTION_DOWN) && y < W_HEIGHT - 1) y++; break;
 		case 2:
-			if (x > 0) x--; break;
+			if (isMovePossible(c_id, DIRECTION_LEFT) && x > 0) x--; break;
 		case 3:
-			if (x < W_WIDTH - 1) x++; break;
+			if (isMovePossible(c_id, DIRECTION_RIGHT) && x < W_WIDTH - 1) x++; break;
 		}
 			
 		clients[c_id]._obj_stat.x = x;
@@ -487,8 +538,20 @@ void process_packet(int c_id, char* packet)
 		// Block 시야 처리
 		// 부하가 많으면 나중에 섹터로 나눠야 함
 		for (int i = 0; i < NUM_BLOCK; ++i) {
-			if (RANGE > distance_block(c_id, i))
+			if (RANGE > distance_block(c_id, i)) {
+				clients[c_id]._ViewListLock.lock();
+				clients[c_id].block_view_list.insert(i);
+				clients[c_id]._ViewListLock.unlock();
 				clients[c_id].send_add_block(i);
+			}
+			else {
+				clients[c_id]._ViewListLock.lock();
+				if (0 != clients[c_id].block_view_list.count(i)) {
+					clients[c_id].block_view_list.erase(i);
+					clients[c_id].Send_Remove_Block(i);
+				}
+				clients[c_id]._ViewListLock.unlock();			
+			}
 		}
 		
 		break;
