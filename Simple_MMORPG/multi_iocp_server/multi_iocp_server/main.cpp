@@ -28,9 +28,11 @@ constexpr int RANGE = 15;
 using namespace std;
 
 void Init_npc();
+void Init_Block();
 void Move_NPC(int _npc_id);
 void Hit_NPC(int _p_id, int n_id);
 void Combat_Reward(int p_id, int n_id);
+int distance_block(int a, int b);
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
@@ -92,6 +94,11 @@ struct OBJ_STAT
 	short	move_type;
 };
 
+struct BLOCK {
+	int     blockID;
+	short	x, y;
+};
+
 class SESSION {
 	OVER_EXP _recv_over;
 
@@ -144,12 +151,14 @@ public:
 	void send_login_ok_packet(int c_id);
 	void send_move_packet(int c_id, int client_time);
 	void send_add_object(int c_id);
+	void send_add_block(int c_id);
 	void send_chat_packet(int c_id, const char* mess);
 	void Send_Remove_Packet(int c_id);
 	void Send_StatChange_Packet(int c_id, int n_id);
 };
 
 array<SESSION, MAX_USER + NUM_NPC> clients;
+array<BLOCK, NUM_BLOCK> blocks;
 HANDLE g_h_iocp;
 SOCKET g_s_socket;
 
@@ -176,6 +185,12 @@ int distance(int a, int b)
 {
 	return abs(clients[a]._obj_stat.x - clients[b]._obj_stat.x)
 		+ abs(clients[a]._obj_stat.y - clients[b]._obj_stat.y);
+}
+
+int distance_block(int a, int b)
+{
+	return abs(clients[a]._obj_stat.x - blocks[b].x)
+		+ abs(clients[a]._obj_stat.y - blocks[b].y);
 }
 
 void SESSION::send_login_ok_packet(int c_id)
@@ -240,6 +255,18 @@ void SESSION::send_add_object(int c_id)
 	p.hp = clients[c_id]._obj_stat.hp;
 	p.hpmax = clients[c_id]._obj_stat.hpmax;
 	strcpy_s(p.name, clients[c_id]._obj_stat._name);
+	do_send(&p);
+}
+
+void SESSION::send_add_block(int c_id)
+{
+	SC_ADD_OBJECT_PACKET p;
+	p.id = c_id;
+	p.size = sizeof(SC_ADD_OBJECT_PACKET);
+	p.type = SC_ADD_OBJECT;
+	p.x = blocks[c_id].x;
+	p.y = blocks[c_id].y;
+	p.race = RACE_BLOCK;
 	do_send(&p);
 }
 
@@ -443,6 +470,14 @@ void process_packet(int c_id, char* packet)
 				}
 			}
 		}
+
+		// Block 시야 처리
+		// 부하가 많으면 나중에 섹터로 나눠야 함
+		for (int i = 0; i < NUM_BLOCK; ++i) {
+			if (RANGE > distance_block(c_id, i))
+				clients[c_id].send_add_block(i);
+		}
+		
 		break;
 	}
 	case CS_ATTACK: {
@@ -782,9 +817,20 @@ void Init_npc()
 	
 }
 
+void Init_Block()
+{
+	for (int i = 0; i < NUM_BLOCK; ++i) 
+	{
+		blocks[i].blockID = i;
+		blocks[i].x = rand() % W_WIDTH;
+		blocks[i].y = rand() % W_WIDTH;
+	}
+}
+
 
 int main()
 {
+	Init_Block();
 	Init_npc();
 
 	WSADATA WSAData;

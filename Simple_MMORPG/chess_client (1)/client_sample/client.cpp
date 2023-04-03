@@ -130,6 +130,13 @@ public:
 		m_level.setPosition(rx - 40, ry - 40);
 		g_window->draw(m_level);
 	}
+	void draw_block() {
+		if (false == m_showing) return;
+		float rx = (m_x - g_left_x) * 65.0f + 8;
+		float ry = (m_y - g_top_y) * 65.0f + 8;
+		m_sprite.setPosition(rx, ry);
+		g_window->draw(m_sprite);
+	}
 	void draw_hp() {
 		if (false == m_showing) return;
 		float rx = (m_x - g_left_x) * 65.0f + 8;
@@ -222,6 +229,7 @@ public:
 OBJECT avatar;
 OBJECT players[MAX_USER];
 OBJECT npcs[NUM_NPC];
+OBJECT blocks[NUM_BLOCK];
 OBJECT chaticon;
 OBJECT chatUI;
 
@@ -240,6 +248,8 @@ sf::Texture* HPBar;
 sf::Texture* Chatimage;
 sf::Texture* CharPicture;
 sf::Texture* ChatUI;
+sf::Texture* Block;
+
 
 void client_initialize()
 {
@@ -254,11 +264,14 @@ void client_initialize()
 	Chatimage = new sf::Texture;
 	CharPicture = new sf::Texture;
 	ChatUI = new sf::Texture;
+	Block = new sf::Texture;
 
 	//board->loadFromFile("Texture/Map/map.bmp");
 	board->loadFromFile("Texture/Tile/Tile0.png");
+	//board->loadFromFile("Texture/Tile/Tile22.png");
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
+	//skeleton->loadFromFile("Texture/Tile/Tile22.png");
 	wraith->loadFromFile("Texture/Monster/wraith.png");
 	devil->loadFromFile("Texture/Monster/Devil.png");
 	diablo->loadFromFile("Texture/Monster/Diablo.png");
@@ -267,6 +280,7 @@ void client_initialize()
 	Chatimage->loadFromFile("Texture/User/chaticon.png");
 	CharPicture->loadFromFile("Texture/User/CharPicture.png");
 	ChatUI->loadFromFile("Texture/User/chatui.bmp");
+	Block->loadFromFile("Texture/Tile/Tile22.png");
 
 	MapObj = OBJECT{ *board, 0, 0, 2000, 2000 };
 	
@@ -285,8 +299,9 @@ void client_initialize()
 	for (auto& pl : players) {
 		pl = OBJECT{ *pieces, 50, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
 	}
-	for (auto& npc : npcs) {
-		npc = OBJECT{ *skeleton, 0, 0, 38, 73, *HPBar, 0, 0, 89, 10 };
+
+	for (auto& block : blocks) {
+		block = OBJECT{ *Block, 0, 0, 2000, 2000 };
 	}
 
 	chaticon = OBJECT{ *Chatimage, 0, 0, 90, 90 };
@@ -304,6 +319,8 @@ void client_finish()
 	delete HPBar;
 	delete Chatimage;
 	delete CharPicture;
+
+	delete Block;
 }
 
 void ProcessPacket(char* ptr)
@@ -347,7 +364,8 @@ void ProcessPacket(char* ptr)
 		SC_ADD_OBJECT_PACKET* packet = reinterpret_cast<SC_ADD_OBJECT_PACKET*>(ptr);
 
 		int id = packet->id;
-		if (id < MAX_USER) {
+		//if (id < MAX_USER) {
+		if (packet->race == RACE_PLAYER) {
 			players[id].move(packet->x, packet->y);
 			players[id].set_name(packet->name, false);
 			char lev[10];
@@ -372,9 +390,18 @@ void ProcessPacket(char* ptr)
 			case RACE_DIABLO:
 				npcs[id - MAX_USER] = OBJECT{ *diablo, 0, 0, 135, 158 , *HPBar, 0, 0, 89, 10 };
 				break;
+			case RACE_BLOCK:
+				// 문제점 : 클라이언트에서 블록이 안생김
+				blocks[id] = OBJECT{ *Block, 0, 0, 2000, 2000 };
+				blocks[id].m_x = packet->x;
+				blocks[id].m_y = packet->y;
+				blocks[id].move(packet->x, packet->y);
+				blocks[id].show();
+				break;
 			default:
 				break;
 			}
+			if (packet->race == RACE_BLOCK) break;
 			npcs[id - MAX_USER].move(packet->x, packet->y);
 			char lev[10];
 			sprintf_s(lev, "%d", packet->level);
@@ -565,6 +592,7 @@ void client_main()
 	//avatar.draw_ui();
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw_hp(); 
+	for (auto& bl : blocks) bl.draw_block();
 	//chaticon.a_move(0, 900);
 	//chaticon.a_draw();
 	//chatUI.a_move(600, 900);
