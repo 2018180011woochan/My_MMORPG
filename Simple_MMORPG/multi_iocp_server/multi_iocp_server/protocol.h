@@ -5,6 +5,9 @@ constexpr int NAME_SIZE = 20;
 constexpr int W_WIDTH = 2000;
 constexpr int W_HEIGHT = 2000;
 
+constexpr int Half_width = W_WIDTH / 2;
+constexpr int Half_height = W_HEIGHT / 2;
+
 constexpr int MAX_USER = 10000;
 constexpr int NUM_NPC = 200000;
 constexpr int NUM_BLOCK = 80000;

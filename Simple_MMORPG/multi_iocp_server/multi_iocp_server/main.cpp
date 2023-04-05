@@ -38,6 +38,9 @@ int distance_block(int a, int b);
 bool isMovePossible(int _id, DIRECTION _direction);
 bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction);
 
+SECTOR GetSector(RACE _race, int _id);
+void SetSector(RACE _race, int _id);
+
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND, OP_RANDOM_MOVE };
@@ -94,11 +97,13 @@ struct OBJ_STAT
 	short	level;
 	int		exp, maxexp;
 	int		hp, hpmax;
+	SECTOR  sector;
 };
 
 struct BLOCK {
 	int     blockID;
 	short	x, y;
+	SECTOR  sector;
 };
 
 class SESSION {
@@ -281,6 +286,48 @@ bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction)
 	return true;
 }
 
+SECTOR GetSector(RACE _race, int _id)
+{
+	if (_race == RACE_BLOCK) 
+		return blocks[_id].sector;
+	else 
+		return clients[_id]._obj_stat.sector;
+	
+	return SECTOR_END;
+}
+
+void SetSector(RACE _race, int _id)
+{
+	if (_race == RACE_BLOCK) {
+		if (blocks[_id].x < Half_width) {	// 1,3 섹터
+			if (blocks[_id].y < Half_height)
+				blocks[_id].sector = SECTOR_1;
+			else
+				blocks[_id].sector = SECTOR_3;
+		}
+		else {								// 2,4 섹터
+			if (blocks[_id].y < Half_height)
+				blocks[_id].sector = SECTOR_2;
+			else
+				blocks[_id].sector = SECTOR_4;
+		}
+	}
+	else {
+		if (clients[_id]._obj_stat.x < Half_width) {	// 1,3 섹터
+			if (clients[_id]._obj_stat.y < Half_height)
+				clients[_id]._obj_stat.sector = SECTOR_1;
+			else
+				clients[_id]._obj_stat.sector = SECTOR_3;
+		}
+		else {								// 2,4 섹터
+			if (clients[_id]._obj_stat.y < Half_height)
+				clients[_id]._obj_stat.sector = SECTOR_2;
+			else
+				clients[_id]._obj_stat.sector = SECTOR_4;
+		}
+	}
+}
+
 void SESSION::send_login_ok_packet(int c_id)
 {
 	SC_LOGIN_OK_PACKET p;
@@ -291,16 +338,16 @@ void SESSION::send_login_ok_packet(int c_id)
 	/*p.x = _obj_stat.x;
 	p.y = _obj_stat.y;*/
 
-	/*p.x = 1;
-	p.y = 1; 
-	clients[p.id]._obj_stat.x = p.x;
-	clients[p.id]._obj_stat.y = p.y;*/
-
-	p.x = rand() % W_WIDTH;
-	p.y = rand() % W_HEIGHT;
-
+	p.x = 1001;
+	p.y = 1110; 
 	clients[p.id]._obj_stat.x = p.x;
 	clients[p.id]._obj_stat.y = p.y;
+
+	/*p.x = rand() % W_WIDTH;
+	p.y = rand() % W_HEIGHT;*/
+
+	//clients[p.id]._obj_stat.x = p.x;
+	//clients[p.id]._obj_stat.y = p.y;
 
 	// 나중에 DB에서 이 정보 꺼내온다
 	clients[p.id]._obj_stat.level = 1;
@@ -308,6 +355,8 @@ void SESSION::send_login_ok_packet(int c_id)
 	clients[p.id]._obj_stat.hpmax = clients[p.id]._obj_stat.level * 500;
 	clients[p.id]._obj_stat.hp = clients[p.id]._obj_stat.hpmax;
 	clients[p.id]._obj_stat.race = RACE::RACE_PLAYER;
+
+	SetSector(RACE_PLAYER, p.id);
 
 	p.level = 1;
 	p.exp = 0;
@@ -744,7 +793,7 @@ void Move_NPC(int _npc_id, int _c_id)
 	if (clients[_npc_id]._attacktype == ATTACKTYPE_PEACE)
 		PathFinder_Peace(_npc_id, _c_id);
 	if (clients[_npc_id]._attacktype == ATTACKTYPE_AGRO)
-		PathFinder_Peace(_npc_id, _c_id);
+		PathFinder_Agro(_npc_id, _c_id);
 
 	unordered_set<int> new_vl;
 	for (int i = 0; i < MAX_USER; ++i) {
@@ -972,6 +1021,8 @@ void Init_npc()
 		/*clients[i]._obj_stat.x = rand() % W_WIDTH;
 		clients[i]._obj_stat.y = rand() % W_WIDTH;*/
 		strcpy_s(clients[i]._obj_stat._name, "Skeleton");
+
+		SetSector(RACE_SKELETON, i);
 	}
 	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
 	{
@@ -984,6 +1035,8 @@ void Init_npc()
 		clients[i]._movetype = MOVETYPE::MOVETYPE_FIX;
 		clients[i]._attacktype = ATTACKTYPE::ATTACKTYPE_AGRO;
 		strcpy_s(clients[i]._obj_stat._name, "Wriath");
+
+		SetSector(RACE_WRIATH, i);
 	}
 	for (int i = MAX_USER + 100000; i < MAX_USER + NUM_NPC; ++i)
 	{
@@ -996,6 +1049,8 @@ void Init_npc()
 		clients[i]._movetype = MOVETYPE::MOVETYPE_ROAMING;
 		clients[i]._attacktype = ATTACKTYPE::ATTACKTYPE_PEACE;
 		strcpy_s(clients[i]._obj_stat._name, "Devil");
+
+		SetSector(RACE_DEVIL, i);
 	}
 
 	cout << "NPC Initialization complete.\n";
@@ -1011,6 +1066,7 @@ void Init_Block()
 		blocks[i].blockID = i;
 		blocks[i].x = rand() % W_WIDTH;
 		blocks[i].y = rand() % W_WIDTH;
+		SetSector(RACE_BLOCK, i);
 	}
 }
 
