@@ -291,16 +291,16 @@ void SESSION::send_login_ok_packet(int c_id)
 	/*p.x = _obj_stat.x;
 	p.y = _obj_stat.y;*/
 
-	p.x = 1;
+	/*p.x = 1;
 	p.y = 1; 
 	clients[p.id]._obj_stat.x = p.x;
+	clients[p.id]._obj_stat.y = p.y;*/
+
+	p.x = rand() % W_WIDTH;
+	p.y = rand() % W_HEIGHT;
+
+	clients[p.id]._obj_stat.x = p.x;
 	clients[p.id]._obj_stat.y = p.y;
-
-	//p.x = rand() % W_WIDTH;
-	//p.y = rand() % W_HEIGHT;
-
-	//clients[p.id]._obj_stat.x = p.x;
-	//clients[p.id]._obj_stat.y = p.y;
 
 	// 나중에 DB에서 이 정보 꺼내온다
 	clients[p.id]._obj_stat.level = 1;
@@ -744,7 +744,7 @@ void Move_NPC(int _npc_id, int _c_id)
 	if (clients[_npc_id]._attacktype == ATTACKTYPE_PEACE)
 		PathFinder_Peace(_npc_id, _c_id);
 	if (clients[_npc_id]._attacktype == ATTACKTYPE_AGRO)
-		PathFinder_Agro(_npc_id, _c_id);
+		PathFinder_Peace(_npc_id, _c_id);
 
 	unordered_set<int> new_vl;
 	for (int i = 0; i < MAX_USER; ++i) {
