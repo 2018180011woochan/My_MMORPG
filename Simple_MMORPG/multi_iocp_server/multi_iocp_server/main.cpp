@@ -93,7 +93,7 @@ struct OBJ_STAT
 	int		_db_id;
 	short	x, y;
 	char	_name[NAME_SIZE];
-	short	race;
+	RACE	race;
 	short	level;
 	int		exp, maxexp;
 	int		hp, hpmax;
@@ -549,6 +549,8 @@ void process_packet(int c_id, char* packet)
 			
 		clients[c_id]._obj_stat.x = x;
 		clients[c_id]._obj_stat.y = y;
+
+		SetSector(clients[c_id]._obj_stat.race, c_id);
 
 		clients[c_id]._ViewListLock.lock();
 		unordered_set<int> old_vl = clients[c_id].view_list;
