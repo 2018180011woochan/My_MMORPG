@@ -29,11 +29,14 @@ using namespace std;
 
 void Init_npc();
 void Init_Block();
-void Move_NPC(int _npc_id);
+void Move_NPC(int _npc_id, int _c_id);
+void PathFinder_Peace(int _npc_id, int _c_id);
+void PathFinder_Agro(int _npc_id, int _c_id);
 void Hit_NPC(int _p_id, int n_id);
 void Combat_Reward(int p_id, int n_id);
 int distance_block(int a, int b);
-bool isMovePossible(int _id, DIRECTION _derection);
+bool isMovePossible(int _id, DIRECTION _direction);
+bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction);
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
@@ -91,8 +94,6 @@ struct OBJ_STAT
 	short	level;
 	int		exp, maxexp;
 	int		hp, hpmax;
-	short	attack_type;
-	short	move_type;
 };
 
 struct BLOCK {
@@ -234,6 +235,48 @@ bool isMovePossible(int _id, DIRECTION _direction)
 		break;
 	}
 	
+
+	return true;
+}
+
+bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction)
+{
+	clients[_cid]._ViewListLock.lock();
+	unordered_set<int> block_vl = clients[_cid].block_view_list;
+	clients[_cid]._ViewListLock.unlock();
+
+	switch (_direction)
+	{
+	case DIRECTION_UP:
+		for (auto& bl : block_vl) {
+			if (((clients[_mid]._obj_stat.x == blocks[bl].x + 2) || (clients[_mid]._obj_stat.x == blocks[bl].x + 1)) &&
+				clients[_mid]._obj_stat.y == (blocks[bl].y + 1))
+				return false;
+		}
+		break;
+	case DIRECTION_DOWN:
+		for (auto& bl : block_vl) {
+			if (((clients[_mid]._obj_stat.x == blocks[bl].x + 2) || (clients[_mid]._obj_stat.x == blocks[bl].x + 1)) &&
+				clients[_mid]._obj_stat.y == (blocks[bl].y - 1))
+				return false;
+		}
+		break;
+	case DIRECTION_LEFT:
+		for (auto& bl : block_vl) {
+			if ((clients[_mid]._obj_stat.x == blocks[bl].x + 3) &&
+				(clients[_mid]._obj_stat.y == blocks[bl].y))
+				return false;
+		}
+		break;
+	case DIRECTION_RIGHT:
+		for (auto& bl : block_vl) {
+			if ((clients[_mid]._obj_stat.x == blocks[bl].x) &&
+				(clients[_mid]._obj_stat.y == blocks[bl].y))
+				return false;
+		}
+		break;
+	}
+
 
 	return true;
 }
@@ -441,8 +484,6 @@ void process_packet(int c_id, char* packet)
 		CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
 		short x = clients[c_id]._obj_stat.x;
 		short y = clients[c_id]._obj_stat.y;
-
-		
 
 		switch (p->direction) {
 		case 0: 
@@ -684,7 +725,7 @@ void do_worker()
 		case OP_RANDOM_MOVE: {
 			// 일단 그냥 ROMING
 			int npc_id = static_cast<int>(key);
-			Move_NPC(npc_id);
+			Move_NPC(npc_id, ex_over->target_id);
 			delete ex_over;
 		}
 						   break;
@@ -692,25 +733,18 @@ void do_worker()
 	} // WHILE
 }
 
-void Move_NPC(int _npc_id)
+void Move_NPC(int _npc_id, int _c_id)
 {
-	short x = clients[_npc_id]._obj_stat.x;
-	short y = clients[_npc_id]._obj_stat.y;
 	unordered_set<int> old_vl;
 	for (int i = 0; i < MAX_USER; ++i) {
 		if (clients[i]._s_state != ST_INGAME) continue;
 		if (distance(_npc_id, i) <= RANGE) old_vl.insert(i);
 	}
 
-	switch (rand() % 4) {
-	case 0: if (y > 0) y--; break;
-	case 1: if (y < W_HEIGHT - 1) y++; break;
-	case 2: if (x > 0) x--; break;
-	case 3: if (x < W_WIDTH - 1) x++; break;
-	}
-
-	clients[_npc_id]._obj_stat.x = x;
-	clients[_npc_id]._obj_stat.y = y;
+	if (clients[_npc_id]._attacktype == ATTACKTYPE_PEACE)
+		PathFinder_Peace(_npc_id, _c_id);
+	if (clients[_npc_id]._attacktype == ATTACKTYPE_AGRO)
+		PathFinder_Agro(_npc_id, _c_id);
 
 	unordered_set<int> new_vl;
 	for (int i = 0; i < MAX_USER; ++i) {
@@ -744,6 +778,28 @@ void Move_NPC(int _npc_id)
 				clients[p_id]._ViewListLock.unlock();
 		}
 	}
+}
+
+void PathFinder_Peace(int _npc_id, int _c_id)
+{
+	short x = clients[_npc_id]._obj_stat.x;
+	short y = clients[_npc_id]._obj_stat.y;
+	
+
+	// 길찾기 알고리즘 적용해야함
+	switch (rand() % 4) {
+	case 0: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_UP) && y > 0) y--; break;
+	case 1: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_DOWN) && y < W_HEIGHT - 1) y++; break;
+	case 2: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_LEFT) && x > 0) x--; break;
+	case 3: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_RIGHT) && x < W_WIDTH - 1) x++; break;
+	}
+
+	clients[_npc_id]._obj_stat.x = x;
+	clients[_npc_id]._obj_stat.y = y;
+}
+
+void PathFinder_Agro(int _npc_id, int _c_id)
+{
 }
 
 void Hit_NPC(int _p_id, int n_id)
@@ -801,6 +857,7 @@ void do_ai_ver_heat_beat()
 				{
 					auto ex_over = new OVER_EXP;
 					ex_over->_comp_type = OP_RANDOM_MOVE;
+					ex_over->target_id = c_id;
 					PostQueuedCompletionStatus(g_h_iocp, 1, i, &ex_over->_over);
 				}
 				else if (distance(i, c_id) < RANGE + 1)
@@ -854,8 +911,8 @@ void Init_npc()
 		clients[i]._obj_stat.level = 1;
 		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
 		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
-		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
+		clients[i]._movetype = MOVETYPE::MOVETYPE_FIX;
+		clients[i]._attacktype = ATTACKTYPE::ATTACKTYPE_PEACE;
 		//clients[i]._obj_stat.x = rand() % 10;
 		//clients[i]._obj_stat.y = rand() % 10;
 		/*clients[i]._obj_stat.x = rand() % W_WIDTH;
@@ -870,8 +927,8 @@ void Init_npc()
 		clients[i]._obj_stat.level = 2;
 		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
 		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_FIX;
-		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_AGRO;
+		clients[i]._movetype = MOVETYPE::MOVETYPE_FIX;
+		clients[i]._attacktype = ATTACKTYPE::ATTACKTYPE_AGRO;
 		strcpy_s(clients[i]._obj_stat._name, "Wriath");
 	}
 	for (int i = MAX_USER + 100000; i < MAX_USER + NUM_NPC; ++i)
@@ -882,8 +939,8 @@ void Init_npc()
 		clients[i]._obj_stat.level = 3;
 		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
 		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-		clients[i]._obj_stat.move_type = MOVETYPE::MOVETYPE_ROAMING;
-		clients[i]._obj_stat.attack_type = ATTACKTYPE::ATTACKTYPE_PEACE;
+		clients[i]._movetype = MOVETYPE::MOVETYPE_ROAMING;
+		clients[i]._attacktype = ATTACKTYPE::ATTACKTYPE_PEACE;
 		strcpy_s(clients[i]._obj_stat._name, "Devil");
 	}
 
