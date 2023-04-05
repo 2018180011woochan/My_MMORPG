@@ -785,7 +785,6 @@ void PathFinder_Peace(int _npc_id, int _c_id)
 	short x = clients[_npc_id]._obj_stat.x;
 	short y = clients[_npc_id]._obj_stat.y;
 	
-
 	// 길찾기 알고리즘 적용해야함
 	switch (rand() % 4) {
 	case 0: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_UP) && y > 0) y--; break;
@@ -800,6 +799,61 @@ void PathFinder_Peace(int _npc_id, int _c_id)
 
 void PathFinder_Agro(int _npc_id, int _c_id)
 {
+	short x = clients[_npc_id]._obj_stat.x;
+	short y = clients[_npc_id]._obj_stat.y;
+
+	short target_x = clients[_c_id]._obj_stat.x;
+	short target_y = clients[_c_id]._obj_stat.y;
+	
+	int direction = 4;
+
+	if (abs(x - target_x) > abs(y - target_y)) {
+		if (x > target_x)
+			direction = 2;
+		else
+			direction = 3;
+	}
+	else {
+		if (y > target_y)
+			direction = 0;
+		else
+			direction = 1;
+	}
+
+	// 길찾기 알고리즘 적용해야함
+	switch (direction) {
+	case 0:
+		if (!isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_UP)) {
+			if (x > target_x) x--;
+			else x++;
+		}
+		else if (y > 0) y--; 
+		break;
+	case 1: 
+		if (!isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_DOWN)) {
+			if (x > target_x) x--;
+			else x++;
+		}
+		else if (y < W_HEIGHT - 1) y++;
+		break;
+	case 2:
+		if (!isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_LEFT)) {
+			if (y > target_y) y--;
+			else y++;
+		}
+		else if (x > 0) x--;
+		break;
+	case 3: 
+		if (!isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_RIGHT)) {
+			if (y > target_y) y--;
+			else y++;
+		}
+		else if (x < W_WIDTH - 1) x++;
+		break;
+	}
+
+	clients[_npc_id]._obj_stat.x = x;
+	clients[_npc_id]._obj_stat.y = y;
 }
 
 void Hit_NPC(int _p_id, int n_id)
