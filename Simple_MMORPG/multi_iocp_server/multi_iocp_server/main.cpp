@@ -343,8 +343,8 @@ void SESSION::send_login_ok_packet(int c_id)
 	clients[p.id]._obj_stat.x = p.x;
 	clients[p.id]._obj_stat.y = p.y;
 
-	/*p.x = rand() % W_WIDTH;
-	p.y = rand() % W_HEIGHT;*/
+	//p.x = rand() % W_WIDTH;
+	//p.y = rand() % W_HEIGHT;
 
 	//clients[p.id]._obj_stat.x = p.x;
 	//clients[p.id]._obj_stat.y = p.y;
@@ -510,13 +510,15 @@ void process_packet(int c_id, char* packet)
 
 		for (auto& obj : clients) {
 			if (obj._obj_stat._id == c_id) continue;
-			if (ST_INGAME != obj._s_state) continue;
+			//if (ST_INGAME != obj._s_state) continue;
+			if (ST_FREE == obj._s_state) continue;
 
 			if (RANGE >= distance(obj._obj_stat._id, c_id)) {
 				clients[c_id]._ViewListLock.lock();
 				clients[c_id].view_list.insert(obj._obj_stat._id);
 				clients[c_id]._ViewListLock.unlock();
 				clients[c_id].send_add_object(obj._obj_stat._id);
+				obj._s_state = ST_INGAME;
 			}
 		}
 
@@ -554,7 +556,8 @@ void process_packet(int c_id, char* packet)
 
 		unordered_set<int> new_vl;
 		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
-			if (ST_INGAME != clients[i]._s_state) continue;
+			//if (ST_INGAME != clients[i]._s_state) continue;
+			if (ST_FREE == clients[i]._s_state) continue;
 			if (c_id == clients[i]._obj_stat._id) continue;
 
 			if (RANGE > distance(c_id, i))
@@ -570,6 +573,7 @@ void process_packet(int c_id, char* packet)
 				clients[c_id]._ViewListLock.lock();
 				clients[c_id].view_list.insert(pl);
 				clients[c_id]._ViewListLock.unlock();
+				clients[pl]._s_state = ST_INGAME;
 
 				
 				if (clients[pl]._obj_stat.race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
@@ -579,6 +583,7 @@ void process_packet(int c_id, char* packet)
 					clients[pl].send_add_object(c_id);
 					clients[pl].view_list.insert(c_id);
 					clients[pl]._ViewListLock.unlock();
+					clients[pl]._s_state = ST_INGAME;
 				}
 				else {
 					clients[pl]._ViewListLock.unlock();
@@ -595,6 +600,7 @@ void process_packet(int c_id, char* packet)
 					clients[pl].send_add_object(c_id);
 					clients[pl].view_list.insert(c_id);
 					clients[pl]._ViewListLock.unlock();
+					clients[pl]._s_state = ST_INGAME;
 				}
 				else {
 					clients[pl]._ViewListLock.unlock();
@@ -610,6 +616,7 @@ void process_packet(int c_id, char* packet)
 				clients[c_id]._ViewListLock.lock();
 				clients[c_id].view_list.erase(pl);
 				clients[c_id]._ViewListLock.unlock();
+				clients[pl]._s_state = ST_SLEEP;
 
 				if (clients[pl]._obj_stat.race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
 					continue;
@@ -621,6 +628,7 @@ void process_packet(int c_id, char* packet)
 					clients[pl].Send_Remove_Packet(c_id);
 					clients[pl].view_list.erase(c_id);
 					clients[pl]._ViewListLock.unlock();
+					clients[pl]._s_state = ST_SLEEP;
 				}
 			}
 		}
@@ -628,6 +636,7 @@ void process_packet(int c_id, char* packet)
 		// Block 시야 처리
 		// 부하가 많으면 나중에 섹터로 나눠야 함
 		for (int i = 0; i < NUM_BLOCK; ++i) {
+			if (clients[c_id]._obj_stat.sector != blocks[i].sector) continue;
 			if (RANGE > distance_block(c_id, i)) {
 				clients[c_id]._ViewListLock.lock();
 				clients[c_id].block_view_list.insert(i);
@@ -956,6 +965,8 @@ void do_ai_ver_heat_beat()
 			if (clients[i]._s_state == ST_SLEEP) continue;
 			for (auto& c_id : ConnectedPlayer)
 			{
+				if (clients[c_id]._obj_stat.sector != clients[i]._obj_stat.sector) continue;
+
 				if (distance(i, c_id) < RANGE)
 				{
 					auto ex_over = new OVER_EXP;
@@ -1009,7 +1020,7 @@ void Init_npc()
 	for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
 	{
 		// Skeleton
-		clients[i]._s_state = ST_INGAME;
+		clients[i]._s_state = ST_SLEEP;
 		clients[i]._obj_stat.race = RACE::RACE_SKELETON;
 		clients[i]._obj_stat.level = 1;
 		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
@@ -1027,7 +1038,7 @@ void Init_npc()
 	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
 	{
 		// Wraith
-		clients[i]._s_state = ST_INGAME;
+		clients[i]._s_state = ST_SLEEP;
 		clients[i]._obj_stat.race = RACE::RACE_WRIATH;
 		clients[i]._obj_stat.level = 2;
 		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
@@ -1041,7 +1052,7 @@ void Init_npc()
 	for (int i = MAX_USER + 100000; i < MAX_USER + NUM_NPC; ++i)
 	{
 		// Devil
-		clients[i]._s_state = ST_INGAME;
+		clients[i]._s_state = ST_SLEEP;
 		clients[i]._obj_stat.race = RACE::RACE_DEVIL;
 		clients[i]._obj_stat.level = 3;
 		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
