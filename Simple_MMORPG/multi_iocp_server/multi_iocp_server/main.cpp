@@ -204,9 +204,9 @@ int distance_block(int a, int b)
 
 bool isMovePossible(int _id, DIRECTION _direction)
 {
-	clients[_id]._ViewListLock.lock();
+	//clients[_id]._ViewListLock.lock();
 	unordered_set<int> block_vl = clients[_id].block_view_list;
-	clients[_id]._ViewListLock.unlock();
+	//clients[_id]._ViewListLock.unlock();
 	
 	switch (_direction)
 	{
@@ -246,9 +246,10 @@ bool isMovePossible(int _id, DIRECTION _direction)
 
 bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction)
 {
-	clients[_cid]._ViewListLock.lock();
+	//clients[_cid]._ViewListLock.lock();
 	unordered_set<int> block_vl = clients[_cid].block_view_list;
-	clients[_cid]._ViewListLock.unlock();
+	//clients[_cid]._ViewListLock.unlock();
+
 
 	switch (_direction)
 	{
@@ -338,16 +339,16 @@ void SESSION::send_login_ok_packet(int c_id)
 	/*p.x = _obj_stat.x;
 	p.y = _obj_stat.y;*/
 
-	p.x = 1001;
-	p.y = 1110; 
-	clients[p.id]._obj_stat.x = p.x;
-	clients[p.id]._obj_stat.y = p.y;
-
-	//p.x = rand() % W_WIDTH;
-	//p.y = rand() % W_HEIGHT;
-
+	//p.x = 1001;
+	//p.y = 1110; 
 	//clients[p.id]._obj_stat.x = p.x;
 	//clients[p.id]._obj_stat.y = p.y;
+
+	p.x = rand() % W_WIDTH;
+	p.y = rand() % W_HEIGHT;
+
+	clients[p.id]._obj_stat.x = p.x;
+	clients[p.id]._obj_stat.y = p.y;
 
 	// 나중에 DB에서 이 정보 꺼내온다
 	clients[p.id]._obj_stat.level = 1;
@@ -523,6 +524,7 @@ void process_packet(int c_id, char* packet)
 		}
 
 		for (auto& block : blocks) {
+			if (GetSector(clients[c_id]._obj_stat.race, c_id) != block.sector) continue;
 			if (RANGE > distance_block(c_id, block.blockID))
 				clients[c_id].send_add_block(block.blockID);
 			
@@ -558,6 +560,7 @@ void process_packet(int c_id, char* packet)
 
 		unordered_set<int> new_vl;
 		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
+			if (clients[i]._obj_stat.sector != clients[c_id]._obj_stat.sector) continue;
 			//if (ST_INGAME != clients[i]._s_state) continue;
 			if (ST_FREE == clients[i]._s_state) continue;
 			if (c_id == clients[i]._obj_stat._id) continue;
@@ -797,6 +800,7 @@ void Move_NPC(int _npc_id, int _c_id)
 {
 	unordered_set<int> old_vl;
 	for (int i = 0; i < MAX_USER; ++i) {
+		if (clients[i]._obj_stat.sector != clients[_npc_id]._obj_stat.sector) continue;
 		if (clients[i]._s_state != ST_INGAME) continue;
 		if (distance(_npc_id, i) <= RANGE) old_vl.insert(i);
 	}
