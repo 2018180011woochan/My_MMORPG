@@ -584,13 +584,10 @@ void client_main()
 
 
 	avatar.draw_hp();
-	//avatar.draw_ui();
+
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw_hp(); 
-	//chaticon.a_move(0, 900);
-	//chaticon.a_draw();
-	//chatUI.a_move(600, 900);
-	//chatUI.a_draw();
+
 }
 
 void send_packet(void *packet)

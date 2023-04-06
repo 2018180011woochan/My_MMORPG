@@ -33,6 +33,7 @@ void Move_NPC(int _npc_id, int _c_id);
 void PathFinder_Peace(int _npc_id, int _c_id);
 void PathFinder_Agro(int _npc_id, int _c_id);
 void Hit_NPC(int _p_id, int n_id);
+void Hit_Player(int _n_id, int _p_id);
 void Combat_Reward(int p_id, int n_id);
 int distance_block(int a, int b);
 bool isMovePossible(int _id, DIRECTION _direction);
@@ -339,16 +340,16 @@ void SESSION::send_login_ok_packet(int c_id)
 	/*p.x = _obj_stat.x;
 	p.y = _obj_stat.y;*/
 
-	//p.x = 1001;
-	//p.y = 1110; 
-	//clients[p.id]._obj_stat.x = p.x;
-	//clients[p.id]._obj_stat.y = p.y;
-
-	p.x = rand() % W_WIDTH;
-	p.y = rand() % W_HEIGHT;
-
+	p.x = 10;
+	p.y = 10; 
 	clients[p.id]._obj_stat.x = p.x;
 	clients[p.id]._obj_stat.y = p.y;
+
+	//p.x = rand() % W_WIDTH;
+	//p.y = rand() % W_HEIGHT;
+
+	//clients[p.id]._obj_stat.x = p.x;
+	//clients[p.id]._obj_stat.y = p.y;
 
 	// 나중에 DB에서 이 정보 꺼내온다
 	clients[p.id]._obj_stat.level = 1;
@@ -871,6 +872,12 @@ void PathFinder_Agro(int _npc_id, int _c_id)
 	
 	int direction = 4;
 
+	if (distance(_npc_id, _c_id) < 2) {
+		// 몬스터가 플레이어를 공격한다
+		Hit_Player(_npc_id, _c_id);
+		return;
+	}
+
 	if (abs(x - target_x) > abs(y - target_y)) {
 		if (x > target_x)
 			direction = 2;
@@ -944,6 +951,19 @@ void Hit_NPC(int _p_id, int n_id)
 			clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송	
 		}
 	}
+}
+
+void Hit_Player(int _n_id, int _p_id)
+{
+	int AttackPower = clients[_n_id]._obj_stat.level * 10;
+	clients[_p_id]._obj_stat.hp -= AttackPower;
+
+	clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);	
+	for (auto& pl : clients[_p_id].view_list) {
+		if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
+		clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송	
+	}
+
 }
 
 void Combat_Reward(int p_id, int n_id)
