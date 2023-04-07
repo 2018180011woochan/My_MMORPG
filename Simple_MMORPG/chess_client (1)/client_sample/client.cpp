@@ -62,12 +62,26 @@ public:
 	char my_name[NAME_SIZE];
 
 	sf::Sprite m_HPBar;
+	sf::Sprite m_UIHP;
+	sf::Sprite m_PlayerUI;
 	//sf::Sprite ui_m_HPBar;
 
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
 		m_showing = false;
 		m_sprite.setTexture(t);
 		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
+		set_name("NONAME", false);
+		set_level(0);
+	}
+	OBJECT(sf::Texture& t, int x, int y, int x2, int y2, sf::Texture& hpbar, int tx, int ty, int tx2, int ty2
+		, sf::Texture& playerUI, int ux, int uy, int ux2, int uy2) {
+		m_showing = false;
+		m_sprite.setTexture(t);
+		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
+		m_UIHP.setTexture(hpbar);
+		m_UIHP.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
+		m_PlayerUI.setTexture(playerUI);
+		m_PlayerUI.setTextureRect(sf::IntRect(ux, uy, ux2, uy2));
 		set_name("NONAME", false);
 		set_level(0);
 	}
@@ -144,8 +158,8 @@ public:
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
 
-		m_HPBar.setPosition(rx, ry);
-		g_window->draw(m_HPBar);
+		//m_HPBar.setPosition(rx, ry);
+		//g_window->draw(m_HPBar);
 
 		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
@@ -161,14 +175,17 @@ public:
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
 
+		m_PlayerUI.setPosition(100, 900);
+		g_window->draw(m_PlayerUI);
+
+		m_UIHP.setPosition(130, 910);
+		g_window->draw(m_UIHP);
+
 		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
 
 		m_level.setPosition(rx - 40, ry - 40);
 		g_window->draw(m_level);
-
-		ui_m_name.setPosition(0, 10);
-		g_window->draw(ui_m_name);
 	}
 	void idraw()
 	{
@@ -244,6 +261,8 @@ sf::Texture* wraith;
 sf::Texture* devil;
 sf::Texture* diablo;
 sf::Texture* AttackSource;
+sf::Texture* PlayerUI;
+sf::Texture* UI_HP;
 sf::Texture* HPBar;
 sf::Texture* Chatimage;
 sf::Texture* CharPicture;
@@ -260,6 +279,8 @@ void client_initialize()
 	devil = new sf::Texture;
 	diablo = new sf::Texture;
 	AttackSource = new sf::Texture;
+	PlayerUI = new sf::Texture;
+	UI_HP = new sf::Texture;
 	HPBar = new sf::Texture;
 	Chatimage = new sf::Texture;
 	CharPicture = new sf::Texture;
@@ -276,6 +297,8 @@ void client_initialize()
 	devil->loadFromFile("Texture/Monster/Devil2.png");
 	diablo->loadFromFile("Texture/Monster/Diablo.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
+	PlayerUI->loadFromFile("Texture/Single/StatusBar/2.png");
+	UI_HP->loadFromFile("Texture/Single/StatusBar/0.png");
 	HPBar->loadFromFile("Texture/User/hpbar.bmp");
 	Chatimage->loadFromFile("Texture/User/chaticon.png");
 	CharPicture->loadFromFile("Texture/User/CharPicture.png");
@@ -294,7 +317,9 @@ void client_initialize()
 		PlayerSkill.push_back(OBJECT{ *AttackSource, 0, 120, 60, 60 });
 	}
 
-	avatar = OBJECT{ *pieces, 65, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
+	//avatar = OBJECT{ *pieces, 65, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
+	avatar = OBJECT{ *pieces, 65, 50, 200, 200, *UI_HP, 0, 0, 80, 80, *PlayerUI, 0, 0, 800, 103 };
+
 	avatar.move(4, 4);
 	for (auto& pl : players) {
 		pl = OBJECT{ *pieces, 50, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
@@ -306,6 +331,7 @@ void client_initialize()
 
 	chaticon = OBJECT{ *Chatimage, 0, 0, 90, 90 };
 	chatUI = OBJECT{ *ChatUI, 0, 0, 400, 150 };
+
 }
 
 void client_finish()
@@ -316,10 +342,13 @@ void client_finish()
 	delete wraith;
 	delete devil;
 	delete diablo;
+	delete AttackSource;
+	delete PlayerUI;
+	delete UI_HP;
 	delete HPBar;
 	delete Chatimage;
 	delete CharPicture;
-
+	delete ChatUI;
 	delete Block;
 }
 
@@ -466,10 +495,10 @@ void ProcessPacket(char* ptr)
 
 			if (avatar.hp < 0)
 				avatar.hp = 0;
+			
+			int curhp = 80 * avatar.hp / avatar.hpmax;
 
-			int curhp = 89 * avatar.hp / avatar.hpmax;
-
-			avatar.m_HPBar.setTextureRect(sf::IntRect(0, 0, curhp, 10));
+			avatar.m_UIHP.setTextureRect(sf::IntRect(0, 0, 80, 80 - curhp));
 		}
 		else if (my_packet->id < MAX_USER) {
 			if (players[my_packet->id].level != my_packet->level) {
@@ -583,8 +612,8 @@ void client_main()
 	for (auto& bl : blocks) bl.draw_block();
 
 
-	avatar.draw_hp();
-
+	//avatar.draw_hp();
+	avatar.draw_ui();
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw_hp(); 
 
@@ -600,6 +629,10 @@ void send_packet(void *packet)
 void Login()
 {
 	int db_id = 0;
+	cout << "ID를 입력하세요 ";
+	cin >> db_id;
+	cout << "닉네임을 입력하세요 ";
+	cin >> Nickname;
 
 	CS_LOGIN_PACKET p;
 	p.size = sizeof(CS_LOGIN_PACKET);

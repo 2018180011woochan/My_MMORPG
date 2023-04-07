@@ -27,8 +27,21 @@ constexpr int RANGE = 15;
 #pragma comment(lib, "MSWSock.lib")
 using namespace std;
 
+//////////////// DB //////////////
+SQLHENV henv;
+SQLHDBC hdbc;
+SQLHSTMT hstmt = 0;
+SQLRETURN retcode;
+
+SQLINTEGER user_id, user_race, user_xpos, user_ypos, user_level, user_exp, user_hp, user_hpmax;
+SQLLEN cbuser_id = 0, cbrace = 0, cbuser_xpos = 0, cbuser_ypos = 0, cbuser_level,
+cbuser_exp, cbuser_hp, cbuser_hpmax;
+/// //////////////////////////////
+
+void ShowError(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE RetCode);
 void Init_npc();
 void Init_Block();
+void initialize_DB();
 void Move_NPC(int _npc_id, int _c_id);
 void PathFinder_Peace(int _npc_id, int _c_id);
 void PathFinder_Agro(int _npc_id, int _c_id);
@@ -39,8 +52,10 @@ int distance_block(int a, int b);
 bool isMovePossible(int _id, DIRECTION _direction);
 bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction);
 
-SECTOR GetSector(RACE _race, int _id);
-void SetSector(RACE _race, int _id);
+bool isAllowAccess(int db_id, int cid);
+
+SECTOR GetSector(int _race, int _id);
+void SetSector(int _race, int _id);
 
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
@@ -94,7 +109,8 @@ struct OBJ_STAT
 	int		_db_id;
 	short	x, y;
 	char	_name[NAME_SIZE];
-	RACE	race;
+	//RACE	race;
+	int		race;
 	short	level;
 	int		exp, maxexp;
 	int		hp, hpmax;
@@ -288,7 +304,54 @@ bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction)
 	return true;
 }
 
-SECTOR GetSector(RACE _race, int _id)
+bool isAllowAccess(int db_id, int cid)
+{
+	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
+
+	wstring _db_id = to_wstring(db_id);
+
+	wstring storedProcedure = L"EXEC select_info ";
+	storedProcedure += _db_id;
+
+	retcode = SQLExecDirect(hstmt, (SQLWCHAR*)storedProcedure.c_str(), SQL_NTS);
+	ShowError(hstmt, SQL_HANDLE_STMT, retcode);
+
+	if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+
+		// Bind columns 1, 2, and 3  
+		retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &user_race, 10, &cbrace);
+		retcode = SQLBindCol(hstmt, 2, SQL_C_LONG, &user_xpos, 10, &cbuser_xpos);
+		retcode = SQLBindCol(hstmt, 3, SQL_C_LONG, &user_ypos, 10, &cbuser_ypos);
+		retcode = SQLBindCol(hstmt, 4, SQL_C_LONG, &user_level, 10, &cbuser_level);
+		retcode = SQLBindCol(hstmt, 5, SQL_C_LONG, &user_exp, 10, &cbuser_exp);
+		retcode = SQLBindCol(hstmt, 6, SQL_C_LONG, &user_hp, 10, &cbuser_hp);
+		retcode = SQLBindCol(hstmt, 7, SQL_C_LONG, &user_hpmax, 10, &cbuser_hpmax);
+
+		// Fetch and print each row of data. On an error, display a message and exit.  
+		for (int i = 0; ; i++) {
+			retcode = SQLFetch(hstmt);
+			if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
+			{
+				////// DB에서 정보 받아오기 //////////		
+				clients[cid]._obj_stat.race = user_race;
+				clients[cid]._obj_stat.x = user_xpos;
+				clients[cid]._obj_stat.y = user_ypos;
+				clients[cid]._obj_stat.level = user_level;
+				clients[cid]._obj_stat.exp = user_exp;
+				clients[cid]._obj_stat.hp = user_hp;
+				clients[cid]._obj_stat.hpmax = user_hpmax;
+				return true;
+			}
+			else
+			{
+				std::cout << "DB에 정보가 없어 추가하였습니다\n";
+				return false;
+			}
+		}
+	}
+}
+
+SECTOR GetSector(int _race, int _id)
 {
 	if (_race == RACE_BLOCK) 
 		return blocks[_id].sector;
@@ -298,7 +361,7 @@ SECTOR GetSector(RACE _race, int _id)
 	return SECTOR_END;
 }
 
-void SetSector(RACE _race, int _id)
+void SetSector(int _race, int _id)
 {
 	if (_race == RACE_BLOCK) {
 		if (blocks[_id].x < Half_width) {	// 1,3 섹터
@@ -340,16 +403,16 @@ void SESSION::send_login_ok_packet(int c_id)
 	/*p.x = _obj_stat.x;
 	p.y = _obj_stat.y;*/
 
-	p.x = 10;
-	p.y = 10; 
-	clients[p.id]._obj_stat.x = p.x;
-	clients[p.id]._obj_stat.y = p.y;
-
-	//p.x = rand() % W_WIDTH;
-	//p.y = rand() % W_HEIGHT;
-
+	//p.x = 10;
+	//p.y = 10; 
 	//clients[p.id]._obj_stat.x = p.x;
 	//clients[p.id]._obj_stat.y = p.y;
+
+	p.x = rand() % W_WIDTH;
+	p.y = rand() % W_HEIGHT;
+
+	clients[p.id]._obj_stat.x = p.x;
+	clients[p.id]._obj_stat.y = p.y;
 
 	// 나중에 DB에서 이 정보 꺼내온다
 	clients[p.id]._obj_stat.level = 1;
@@ -485,6 +548,8 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._s_state = ST_INGAME;
 		clients[c_id]._obj_stat.race = RACE_PLAYER;
 		clients[c_id]._lock.unlock();
+
+		isAllowAccess(p->db_id, c_id);
 
 		ConnectedPlayer.push_back(c_id);
 
@@ -951,6 +1016,7 @@ void Hit_NPC(int _p_id, int n_id)
 			clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송	
 		}
 	}
+
 }
 
 void Hit_Player(int _n_id, int _p_id)
@@ -1107,11 +1173,27 @@ void Init_Block()
 	}
 }
 
+void initialize_DB()
+{
+	setlocale(LC_ALL, "korean");
+
+	retcode = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &henv);
+	retcode = SQLSetEnvAttr(henv, SQL_ATTR_ODBC_VERSION, (SQLPOINTER*)SQL_OV_ODBC3, 0);
+	retcode = SQLAllocHandle(SQL_HANDLE_DBC, henv, &hdbc);
+	SQLSetConnectAttr(hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER)5, 0);
+
+	retcode = SQLConnect(hdbc, (SQLWCHAR*)L"project_db_odbc", SQL_NTS, (SQLWCHAR*)NULL, 0, NULL, 0);
+
+	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
+
+	std::cout << "DB Access OK\n";
+}
 
 int main()
 {
 	Init_Block();
 	Init_npc();
+	initialize_DB();
 
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);
