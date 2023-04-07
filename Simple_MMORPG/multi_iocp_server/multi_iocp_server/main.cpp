@@ -451,14 +451,19 @@ void SESSION::send_login_ok_packet(int c_id)
 	p.type = SC_LOGIN_OK;
 	///////////////DB에 있다면 DB에서 꺼내올 것들 //////////////////
 	p.id = clients[c_id]._obj_stat._id;
-	/*p.x = _obj_stat.x;
-	p.y = _obj_stat.y;*/
 
 	if (!isStressTest) {
-		p.x = 10;
+		/*p.x = 10;
 		p.y = 10; 
 		clients[p.id]._obj_stat.x = p.x;
-		clients[p.id]._obj_stat.y = p.y;
+		clients[p.id]._obj_stat.y = p.y;*/
+		p.x = _obj_stat.x;
+		p.y = _obj_stat.y;
+		p.level = _obj_stat.level;
+		p.exp = _obj_stat.exp;
+		p.hpmax = _obj_stat.hpmax;
+		p.hp = _obj_stat.hp;
+		p.race = RACE::RACE_PLAYER;
 	}
 
 	if (isStressTest) {
@@ -468,23 +473,10 @@ void SESSION::send_login_ok_packet(int c_id)
 		clients[p.id]._obj_stat.x = p.x;
 		clients[p.id]._obj_stat.y = p.y;
 	}
-	
 
-	// 나중에 DB에서 이 정보 꺼내온다
-	clients[p.id]._obj_stat.level = 1;
-	clients[p.id]._obj_stat.exp = 0;
-	clients[p.id]._obj_stat.hpmax = clients[p.id]._obj_stat.level * 500;
-	clients[p.id]._obj_stat.hp = clients[p.id]._obj_stat.hpmax;
-	clients[p.id]._obj_stat.race = RACE::RACE_PLAYER;
+	////////////////////////////////////////////////////////////////
 
 	SetSector(RACE_PLAYER, p.id);
-
-	p.level = 1;
-	p.exp = 0;
-	p.hpmax = clients[p.id]._obj_stat.level * 500;
-	p.hp = clients[p.id]._obj_stat.hpmax;
-	p.race = RACE::RACE_PLAYER;
-	////////////////////////////////////////////////////////////////
 	do_send(&p);
 }
 
@@ -596,6 +588,9 @@ void process_packet(int c_id, char* packet)
 		if (p->name[0] == '\0')
 			break;
 
+		if (!isStressTest)
+			isAllowAccess(p->db_id, c_id);
+
 		clients[c_id]._lock.lock();
 		strcpy_s(clients[c_id]._obj_stat._name, p->name);
 		clients[c_id]._obj_stat._id = c_id;
@@ -604,9 +599,6 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._s_state = ST_INGAME;
 		clients[c_id]._obj_stat.race = RACE_PLAYER;
 		clients[c_id]._lock.unlock();
-
-		if (!isStressTest)
-			isAllowAccess(p->db_id, c_id);
 
 		ConnectedPlayer.push_back(c_id);
 
@@ -780,6 +772,7 @@ void process_packet(int c_id, char* packet)
 				clients[c_id]._ViewListLock.unlock();			
 			}
 		}
+		// move할때마다 저장하면 성능 안좋음 다른 방법 찾아야함
 		if (!isStressTest)
 			Save_UserInfo(clients[c_id]._obj_stat._db_id, c_id);
 		break;
