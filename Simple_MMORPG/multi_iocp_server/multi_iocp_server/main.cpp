@@ -22,6 +22,7 @@
 #include "Enum.h"
 
 constexpr int RANGE = 15;
+constexpr int MONSTER_RANGE = 5;
 
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
@@ -53,6 +54,7 @@ bool isMovePossible(int _id, DIRECTION _direction);
 bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction);
 
 bool isAllowAccess(int db_id, int cid);
+void Save_UserInfo(int db_id, int c_id);
 
 SECTOR GetSector(int _race, int _id);
 void SetSector(int _race, int _id);
@@ -351,6 +353,55 @@ bool isAllowAccess(int db_id, int cid)
 	}
 }
 
+void Save_UserInfo(int db_id, int c_id)
+{
+	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
+
+	wstring mydb_id = to_wstring(clients[c_id]._obj_stat._db_id);
+	wstring race = to_wstring(clients[c_id]._obj_stat.race);
+	wstring xpos = to_wstring(clients[c_id]._obj_stat.x);
+	wstring ypos = to_wstring(clients[c_id]._obj_stat.y);
+	wstring userlevel = to_wstring(clients[c_id]._obj_stat.level);
+	wstring exp = to_wstring(clients[c_id]._obj_stat.exp);
+	wstring hp = to_wstring(clients[c_id]._obj_stat.hp);
+	wstring hpmax = to_wstring(clients[c_id]._obj_stat.hpmax);
+
+	wstring storedProcedure = L"EXEC update_userinfo ";
+	storedProcedure += mydb_id;
+	storedProcedure += L", ";
+	storedProcedure += race;
+	storedProcedure += L", ";
+	storedProcedure += xpos;
+	storedProcedure += L", ";
+	storedProcedure += ypos;
+	storedProcedure += L", ";
+	storedProcedure += userlevel;
+	storedProcedure += L", ";
+	storedProcedure += exp;
+	storedProcedure += L", ";
+	storedProcedure += hp;
+	storedProcedure += L", ";
+	storedProcedure += hpmax;
+
+	retcode = SQLExecDirect(hstmt, (SQLWCHAR*)storedProcedure.c_str(), SQL_NTS);
+
+	if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO) {
+		retcode = SQLBindCol(hstmt, 1, SQL_C_LONG, &user_id, 10, &cbuser_id);
+		retcode = SQLBindCol(hstmt, 2, SQL_C_LONG, &user_race, 10, &cbrace);
+		retcode = SQLBindCol(hstmt, 3, SQL_C_LONG, &user_xpos, 10, &cbuser_xpos);
+		retcode = SQLBindCol(hstmt, 4, SQL_C_LONG, &user_ypos, 10, &cbuser_ypos);
+		retcode = SQLBindCol(hstmt, 5, SQL_C_LONG, &user_level, 10, &cbuser_level);
+		retcode = SQLBindCol(hstmt, 6, SQL_C_LONG, &user_exp, 10, &cbuser_exp);
+		retcode = SQLBindCol(hstmt, 7, SQL_C_LONG, &user_hp, 10, &cbuser_hp);
+		retcode = SQLBindCol(hstmt, 8, SQL_C_LONG, &user_hpmax, 10, &cbuser_hpmax);
+
+		for (int i = 0; ; i++) {
+			retcode = SQLFetch(hstmt);
+			break;
+		}
+	}
+}
+
 SECTOR GetSector(int _race, int _id)
 {
 	if (_race == RACE_BLOCK) 
@@ -403,16 +454,21 @@ void SESSION::send_login_ok_packet(int c_id)
 	/*p.x = _obj_stat.x;
 	p.y = _obj_stat.y;*/
 
-	//p.x = 10;
-	//p.y = 10; 
-	//clients[p.id]._obj_stat.x = p.x;
-	//clients[p.id]._obj_stat.y = p.y;
+	if (!isStressTest) {
+		p.x = 10;
+		p.y = 10; 
+		clients[p.id]._obj_stat.x = p.x;
+		clients[p.id]._obj_stat.y = p.y;
+	}
 
-	p.x = rand() % W_WIDTH;
-	p.y = rand() % W_HEIGHT;
+	if (isStressTest) {
+		p.x = rand() % W_WIDTH;
+		p.y = rand() % W_HEIGHT;
 
-	clients[p.id]._obj_stat.x = p.x;
-	clients[p.id]._obj_stat.y = p.y;
+		clients[p.id]._obj_stat.x = p.x;
+		clients[p.id]._obj_stat.y = p.y;
+	}
+	
 
 	// 나중에 DB에서 이 정보 꺼내온다
 	clients[p.id]._obj_stat.level = 1;
@@ -549,7 +605,8 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._obj_stat.race = RACE_PLAYER;
 		clients[c_id]._lock.unlock();
 
-		isAllowAccess(p->db_id, c_id);
+		if (!isStressTest)
+			isAllowAccess(p->db_id, c_id);
 
 		ConnectedPlayer.push_back(c_id);
 
@@ -723,7 +780,8 @@ void process_packet(int c_id, char* packet)
 				clients[c_id]._ViewListLock.unlock();			
 			}
 		}
-		
+		if (!isStressTest)
+			Save_UserInfo(clients[c_id]._obj_stat._db_id, c_id);
 		break;
 	}
 	case CS_ATTACK: {
