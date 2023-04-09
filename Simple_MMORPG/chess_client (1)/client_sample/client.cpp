@@ -681,12 +681,19 @@ void CreateChatMessage(string _message)
 {
 	int chatSize = curChatMessage.size();
 
-	if (chatSize == 0) {
-		curChatMessage.push_back(sf::Text());
-		curChatMessage[0].setFont(g_font);
-		curChatMessage[0].setString(_message);
-		curChatMessage[0].setFillColor(sf::Color(255, 255, 0));
-		curChatMessage[0].setStyle(sf::Text::Bold);
+	curChatMessage.push_back(sf::Text());
+
+	for (int i = 0; i < chatSize; ++i) {
+		if (i != (chatSize - 1)) {
+			curChatMessage[i + 1] = curChatMessage[i];
+		}
+		else
+		{
+			curChatMessage[0].setFont(g_font);
+			curChatMessage[0].setString(_message);
+			curChatMessage[0].setFillColor(sf::Color(255, 255, 0));
+			curChatMessage[0].setStyle(sf::Text::Bold);
+		}
 	}
 }
 
