@@ -709,7 +709,20 @@ int main()
 				case sf::Keyboard::Escape:
 					window.close();
 					break;
-			
+				case sf::Keyboard::Enter:
+					CS_CHAT_PACKET chat_packet;
+					chat_packet.size = sizeof(chat_packet) - sizeof(chat_packet.mess) + strlen(info.c_str()) + 1;
+					chat_packet.type = CS_CHAT;
+					chat_packet.target_id = 0;
+					chat_packet.chat_type = CHATTYPE_SHOUT;
+
+					strcpy_s(chat_packet.mess, info.c_str());
+					send_packet(&chat_packet);
+					info = "";
+					g_isChat = false;
+					chatmessage.setString(info);
+					g_window->draw(chatmessage);
+					break;
 				default:
 					if (g_isChat) {
 						info += char(event.key.code) + 97;
@@ -718,8 +731,6 @@ int main()
 						chatmessage.setString(info);
 						chatmessage.setFillColor(sf::Color(255, 255, 255));
 						//chatmessage.setStyle(sf::Text::Bold);
-
-						
 					}
 					break;
 				}

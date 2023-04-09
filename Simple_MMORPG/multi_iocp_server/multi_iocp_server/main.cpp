@@ -596,6 +596,7 @@ void process_packet(int c_id, char* packet)
 		strcpy_s(clients[c_id]._obj_stat._name, p->name);
 		clients[c_id]._obj_stat._id = c_id;
 		clients[c_id]._obj_stat._db_id = p->db_id;
+		clients[c_id]._obj_stat.race = RACE::RACE_PLAYER;
 		clients[c_id].send_login_ok_packet(c_id);
 		clients[c_id]._s_state = ST_INGAME;
 		clients[c_id]._lock.unlock();
@@ -791,14 +792,23 @@ void process_packet(int c_id, char* packet)
 				}
 			}
 		}
-
-		
-
 		break;
 	}
 	case CS_CHAT:
 	{
-		
+		CS_CHAT_PACKET* p = reinterpret_cast<CS_CHAT_PACKET*>(packet);
+
+		SC_CHAT_PACKET chat_packet;
+		chat_packet.size = sizeof(chat_packet) - sizeof(chat_packet.mess) + strlen(p->mess) + 1;
+		chat_packet.type = SC_CHAT;
+		chat_packet.chat_type = CHATTYPE_SHOUT;
+		chat_packet.id = c_id;
+		strcpy_s(chat_packet.mess, p->mess);
+
+		for (int& connected_id : ConnectedPlayer)
+			clients[connected_id].do_send(&chat_packet);
+
+		cout << "[" << clients[c_id]._obj_stat._name << "] : " << p->mess << "\n";
 		break;
 	}
 	case CS_PARTY_INVITE:
