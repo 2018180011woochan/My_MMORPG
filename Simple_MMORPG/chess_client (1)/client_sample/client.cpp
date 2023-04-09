@@ -46,7 +46,10 @@ sf::RenderWindow* g_window;
 sf::Font g_font;
 sf::Text chatmessage;
 
+vector<sf::Text> curChatMessage;
+
 void Login();
+void CreateChatMessage(string _message);
 
 class OBJECT {
 private:
@@ -556,7 +559,18 @@ void ProcessPacket(char* ptr)
 	}
 	case SC_CHAT:
 	{
-		
+		SC_CHAT_PACKET* p = reinterpret_cast<SC_CHAT_PACKET*>(ptr);
+		string info = "[";
+		if (avatar.id == p->id)
+			info += avatar.my_name;
+		else
+			info += players[p->id].my_name;
+		info += "] : ";
+		info += p->mess;
+
+		CreateChatMessage(info);
+
+		cout << "[" << p->id << "] " << p->mess << "\n";
 		break;
 	}
 	default:
@@ -624,6 +638,15 @@ void client_main()
 	chatUI.a_draw();
 
 	chatmessage.setPosition(700, 900);
+
+	int chatSize = curChatMessage.size();
+
+	for (int i = 0; i < chatSize; ++i) {
+		curChatMessage[i].setPosition(700, 880 - i*20);
+
+		g_window->draw(curChatMessage[i]);
+	}
+
 	g_window->draw(chatmessage);
 }
 
@@ -654,11 +677,26 @@ void Login()
 	send_packet(&p);
 }
 
+void CreateChatMessage(string _message)
+{
+	int chatSize = curChatMessage.size();
+
+	if (chatSize == 0) {
+		curChatMessage.push_back(sf::Text());
+		curChatMessage[0].setFont(g_font);
+		curChatMessage[0].setString(_message);
+		curChatMessage[0].setFillColor(sf::Color(255, 255, 0));
+		curChatMessage[0].setStyle(sf::Text::Bold);
+	}
+}
+
 int main()
 {
 	wcout.imbue(locale("korean"));
 	sf::Socket::Status status = socket.connect("127.0.0.1", PORT_NUM);
 	socket.setBlocking(false);
+
+	curChatMessage.reserve(5);
 
 	Login();
 
