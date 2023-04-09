@@ -38,10 +38,13 @@ constexpr auto WINDOW_HEIGHT = 65 * SCREEN_WIDTH + 10;
 int g_left_x;
 int g_top_y;
 
+bool g_isChat;
+
 char Nickname[20] = "temp";
 
 sf::RenderWindow* g_window;
 sf::Font g_font;
+sf::Text chatmessage;
 
 void Login();
 
@@ -64,6 +67,7 @@ public:
 	sf::Sprite m_HPBar;
 	sf::Sprite m_UIHP;
 	sf::Sprite m_PlayerUI;
+	sf::Sprite m_PlayerEmptyHP;
 	//sf::Sprite ui_m_HPBar;
 
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2) {
@@ -74,7 +78,7 @@ public:
 		set_level(0);
 	}
 	OBJECT(sf::Texture& t, int x, int y, int x2, int y2, sf::Texture& hpbar, int tx, int ty, int tx2, int ty2
-		, sf::Texture& playerUI, int ux, int uy, int ux2, int uy2) {
+		, sf::Texture& playerUI, int ux, int uy, int ux2, int uy2, sf::Texture& playerUI_empty, int ex, int ey, int ex2, int ey2) {
 		m_showing = false;
 		m_sprite.setTexture(t);
 		m_sprite.setTextureRect(sf::IntRect(x, y, x2, y2));
@@ -82,6 +86,8 @@ public:
 		m_UIHP.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
 		m_PlayerUI.setTexture(playerUI);
 		m_PlayerUI.setTextureRect(sf::IntRect(ux, uy, ux2, uy2));
+		m_PlayerEmptyHP.setTexture(playerUI_empty);
+		m_PlayerEmptyHP.setTextureRect(sf::IntRect(ex, ey, ex2, ey2));
 		set_name("NONAME", false);
 		set_level(0);
 	}
@@ -181,6 +187,9 @@ public:
 		m_UIHP.setPosition(130, 910);
 		g_window->draw(m_UIHP);
 
+		m_PlayerEmptyHP.setPosition(133, 910);
+		g_window->draw(m_PlayerEmptyHP);
+
 		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
 
@@ -263,9 +272,8 @@ sf::Texture* diablo;
 sf::Texture* AttackSource;
 sf::Texture* PlayerUI;
 sf::Texture* UI_HP;
+sf::Texture* UI_HP_empty;
 sf::Texture* HPBar;
-sf::Texture* Chatimage;
-sf::Texture* CharPicture;
 sf::Texture* ChatUI;
 sf::Texture* Block;
 
@@ -281,28 +289,23 @@ void client_initialize()
 	AttackSource = new sf::Texture;
 	PlayerUI = new sf::Texture;
 	UI_HP = new sf::Texture;
+	UI_HP_empty = new sf::Texture;
 	HPBar = new sf::Texture;
-	Chatimage = new sf::Texture;
-	CharPicture = new sf::Texture;
 	ChatUI = new sf::Texture;
 	Block = new sf::Texture;
 
-	//board->loadFromFile("Texture/Map/map.bmp");
 	board->loadFromFile("Texture/Tile/Tile0.png");
-	//board->loadFromFile("Texture/Tile/Tile22.png");
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
-	//skeleton->loadFromFile("Texture/Tile/Tile22.png");
 	wraith->loadFromFile("Texture/Monster/wraith2.png");
 	devil->loadFromFile("Texture/Monster/Devil2.png");
 	diablo->loadFromFile("Texture/Monster/Diablo.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
 	PlayerUI->loadFromFile("Texture/Single/StatusBar/2.png");
 	UI_HP->loadFromFile("Texture/Single/StatusBar/0.png");
+	UI_HP_empty->loadFromFile("Texture/Single/StatusBar/emptyhp.png");
 	HPBar->loadFromFile("Texture/User/hpbar.bmp");
-	Chatimage->loadFromFile("Texture/User/chaticon.png");
-	CharPicture->loadFromFile("Texture/User/CharPicture.png");
-	ChatUI->loadFromFile("Texture/User/chatui.bmp");
+	ChatUI->loadFromFile("Texture/Single/Window/chat.png");
 	Block->loadFromFile("Texture/Tile/Tile22.png");
 
 	MapObj = OBJECT{ *board, 0, 0, 2000, 2000 };
@@ -318,7 +321,8 @@ void client_initialize()
 	}
 
 	//avatar = OBJECT{ *pieces, 65, 50, 200, 200, *HPBar, 0, 0, 89, 10 };
-	avatar = OBJECT{ *pieces, 65, 50, 200, 200, *UI_HP, 0, 0, 80, 80, *PlayerUI, 0, 0, 800, 103 };
+	avatar = OBJECT{ *pieces, 65, 50, 200, 200, *UI_HP, 0, 0, 80, 80, *PlayerUI, 0, 0, 800, 103,
+	*UI_HP_empty, 0, 0, 98, 88};
 
 	avatar.move(4, 4);
 	for (auto& pl : players) {
@@ -329,8 +333,7 @@ void client_initialize()
 		block = OBJECT{ *Block, 0, 0, 2000, 2000 };
 	}
 
-	chaticon = OBJECT{ *Chatimage, 0, 0, 90, 90 };
-	chatUI = OBJECT{ *ChatUI, 0, 0, 400, 150 };
+	chatUI = OBJECT{ *ChatUI, 0, 0, 400, 206 };
 
 }
 
@@ -345,9 +348,8 @@ void client_finish()
 	delete AttackSource;
 	delete PlayerUI;
 	delete UI_HP;
+	delete UI_HP_empty;
 	delete HPBar;
-	delete Chatimage;
-	delete CharPicture;
 	delete ChatUI;
 	delete Block;
 }
@@ -496,9 +498,10 @@ void ProcessPacket(char* ptr)
 			if (avatar.hp < 0)
 				avatar.hp = 0;
 			
-			int curhp = 80 * avatar.hp / avatar.hpmax;
+			int curhp = 88 * avatar.hp / avatar.hpmax;
 
-			avatar.m_UIHP.setTextureRect(sf::IntRect(0, 0, 80, 80 - curhp));
+			avatar.m_UIHP.setTextureRect(sf::IntRect(0, 0, 80, 80));
+			avatar.m_PlayerEmptyHP.setTextureRect(sf::IntRect(0, 0, 98, 88 - curhp));
 		}
 		else if (my_packet->id < MAX_USER) {
 			if (players[my_packet->id].level != my_packet->level) {
@@ -617,6 +620,11 @@ void client_main()
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw_hp(); 
 
+	chatUI.a_move(630, 730);
+	chatUI.a_draw();
+
+	chatmessage.setPosition(700, 900);
+	g_window->draw(chatmessage);
 }
 
 void send_packet(void *packet)
@@ -664,7 +672,8 @@ int main()
 	g_window = &window;
 
 	sf::Vector2i pos;
-
+	string cchat;
+	string info;
 	while (window.isOpen())
 	{
 		sf::Event event;
@@ -688,6 +697,10 @@ int main()
 					direction = DIRECTION::DIRECTION_DOWN;
 					break;
 				case sf::Keyboard::A:	// АјАн
+					if (g_isChat) {
+						info += char(event.key.code) + 97;
+						break;
+					}
 					CS_ATTACK_PACKET p;
 					p.size = sizeof(CS_ATTACK_PACKET);
 					p.type = CS_ATTACK;
@@ -695,6 +708,19 @@ int main()
 					break;
 				case sf::Keyboard::Escape:
 					window.close();
+					break;
+			
+				default:
+					if (g_isChat) {
+						info += char(event.key.code) + 97;
+
+						chatmessage.setFont(g_font);
+						chatmessage.setString(info);
+						chatmessage.setFillColor(sf::Color(255, 255, 255));
+						//chatmessage.setStyle(sf::Text::Bold);
+
+						
+					}
 					break;
 				}
 				if (-1 != direction) {
@@ -705,6 +731,23 @@ int main()
 					send_packet(&p);
 				}
 				
+			}
+			if (event.type == sf::Event::MouseButtonPressed)
+			{
+				switch (event.key.code)
+				{
+				case sf::Mouse::Left:
+					pos = sf::Mouse::getPosition(window);
+					if (pos.x > 630 && pos.x < 930 && pos.y > 900 && pos.y < 930)
+					{
+						cout << "touch!" << endl;
+
+						g_isChat = !g_isChat;
+					}
+					break;
+				default:
+					break;
+				}
 			}
 		}
 

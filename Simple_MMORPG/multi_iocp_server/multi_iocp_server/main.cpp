@@ -153,6 +153,11 @@ public:
 		_obj_stat.x = rand() % W_WIDTH;
 		_obj_stat.y = rand() % W_HEIGHT;
 		_obj_stat._name[0] = 0;
+		_obj_stat.level = 1;
+		_obj_stat.exp = 0;
+		_obj_stat.maxexp = _obj_stat.level * 100;
+		_obj_stat.hpmax = _obj_stat.level * 100;
+		_obj_stat.hp = _obj_stat.hpmax;
 		_obj_stat.race = RACE::RACE_END;
 		_s_state = ST_FREE;
 	}
@@ -453,10 +458,6 @@ void SESSION::send_login_ok_packet(int c_id)
 	p.id = clients[c_id]._obj_stat._id;
 
 	if (!isStressTest) {
-		/*p.x = 10;
-		p.y = 10; 
-		clients[p.id]._obj_stat.x = p.x;
-		clients[p.id]._obj_stat.y = p.y;*/
 		p.x = _obj_stat.x;
 		p.y = _obj_stat.y;
 		p.level = _obj_stat.level;
@@ -589,7 +590,7 @@ void process_packet(int c_id, char* packet)
 			break;
 
 		if (!isStressTest)
-			isAllowAccess(p->db_id, c_id);
+			//isAllowAccess(p->db_id, c_id);
 
 		clients[c_id]._lock.lock();
 		strcpy_s(clients[c_id]._obj_stat._name, p->name);
@@ -597,7 +598,6 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._obj_stat._db_id = p->db_id;
 		clients[c_id].send_login_ok_packet(c_id);
 		clients[c_id]._s_state = ST_INGAME;
-		clients[c_id]._obj_stat.race = RACE_PLAYER;
 		clients[c_id]._lock.unlock();
 
 		ConnectedPlayer.push_back(c_id);
