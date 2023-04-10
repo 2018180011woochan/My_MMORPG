@@ -50,6 +50,7 @@ vector<sf::Text> curChatMessage;
 
 void Login();
 void CreateChatMessage(string _message);
+void SetCurMessage(string _message);
 
 class OBJECT {
 private:
@@ -642,7 +643,7 @@ void client_main()
 	int chatSize = curChatMessage.size();
 
 	for (int i = 0; i < chatSize; ++i) {
-		curChatMessage[i].setPosition(700, 880 - i*20);
+		curChatMessage[i].setPosition(650, 850 - i*30);
 
 		g_window->draw(curChatMessage[i]);
 	}
@@ -681,20 +682,42 @@ void CreateChatMessage(string _message)
 {
 	int chatSize = curChatMessage.size();
 
-	curChatMessage.push_back(sf::Text());
+	if (curChatMessage.size() < 5)
+		curChatMessage.push_back(sf::Text());
 
-	for (int i = 0; i < chatSize; ++i) {
-		if (i != (chatSize - 1)) {
-			curChatMessage[i + 1] = curChatMessage[i];
-		}
-		else
-		{
-			curChatMessage[0].setFont(g_font);
-			curChatMessage[0].setString(_message);
-			curChatMessage[0].setFillColor(sf::Color(255, 255, 0));
-			curChatMessage[0].setStyle(sf::Text::Bold);
-		}
+	if (curChatMessage.size() == 1) {
+		SetCurMessage(_message);
 	}
+	else if (curChatMessage.size() == 2) {
+		curChatMessage[1] = curChatMessage[0];
+		SetCurMessage(_message);
+	}
+	else if (curChatMessage.size() == 3) {
+		curChatMessage[2] = curChatMessage[1];
+		curChatMessage[1] = curChatMessage[0];
+		SetCurMessage(_message);
+	}
+	else if (curChatMessage.size() == 4) {
+		curChatMessage[3] = curChatMessage[2];
+		curChatMessage[2] = curChatMessage[1];
+		curChatMessage[1] = curChatMessage[0];
+		SetCurMessage(_message);
+	}
+	else if (curChatMessage.size() == 5) {
+		curChatMessage[4] = curChatMessage[3];
+		curChatMessage[3] = curChatMessage[2];
+		curChatMessage[2] = curChatMessage[1];
+		curChatMessage[1] = curChatMessage[0];
+		SetCurMessage(_message);
+	}
+}
+
+void SetCurMessage(string _message)
+{
+	curChatMessage[0].setFont(g_font);
+	curChatMessage[0].setString(_message);
+	curChatMessage[0].setFillColor(sf::Color(255, 255, 0));
+	curChatMessage[0].setStyle(sf::Text::Bold);
 }
 
 int main()
