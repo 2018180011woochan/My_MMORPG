@@ -12,7 +12,7 @@ constexpr int MAX_USER = 10000;
 constexpr int NUM_NPC = 200000;
 constexpr int NUM_BLOCK = 80000;
 
-bool isStressTest = false;
+bool isStressTest = true;
 
 // Packet ID
 constexpr char CS_LOGIN = 0;

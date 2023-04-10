@@ -545,6 +545,12 @@ void SESSION::send_login_ok_packet(int c_id)
 		p.x = rand() % W_WIDTH;
 		p.y = rand() % W_HEIGHT;
 
+		p.level = 1;
+		p.exp = 100;
+		p.hpmax = 100;
+		p.hp = 100;
+		p.race = RACE::RACE_PLAYER;
+
 		clients[p.id]._obj_stat.x = p.x;
 		clients[p.id]._obj_stat.y = p.y;
 	}
@@ -685,7 +691,7 @@ void process_packet(int c_id, char* packet)
 		if (p->name[0] == '\0')
 			break;
 
-		if (!isStressTest)
+		//if (!isStressTest)
 			//isAllowAccess(p->db_id, c_id);
 
 		clients[c_id]._lock.lock();
