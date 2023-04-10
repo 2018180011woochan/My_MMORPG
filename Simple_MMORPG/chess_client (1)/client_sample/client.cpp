@@ -729,7 +729,7 @@ void client_main()
 	chatSize = curNoticeMessage.size();
 
 	for (int i = 0; i < chatSize; ++i) {
-		curNoticeMessage[i].setPosition(20, 850 - i * 20);
+		curNoticeMessage[i].setPosition(40, 850 - i * 20);
 
 		g_window->draw(curNoticeMessage[i]);
 	}
@@ -802,7 +802,7 @@ void SetCurMessage(string _message)
 {
 	curChatMessage[0].setFont(g_font);
 	curChatMessage[0].setString(_message);
-	curChatMessage[0].setFillColor(sf::Color(255, 255, 0));
+	curChatMessage[0].setFillColor(sf::Color(255, 255, 255));
 	curChatMessage[0].setStyle(sf::Text::Bold);
 	//curChatMessage[0].setCharacterSize(20);
 }
@@ -811,7 +811,7 @@ void CreateNoticeMessage(string _message)
 {
 	int chatSize = curNoticeMessage.size();
 
-	if (curNoticeMessage.size() < 5)
+	if (curNoticeMessage.size() < 7)
 		curNoticeMessage.push_back(sf::Text());
 
 	if (curNoticeMessage.size() == 1) {
@@ -833,6 +833,23 @@ void CreateNoticeMessage(string _message)
 		SetCurNoticeMessage(_message);
 	}
 	else if (curNoticeMessage.size() == 5) {
+		curNoticeMessage[4] = curNoticeMessage[3];
+		curNoticeMessage[3] = curNoticeMessage[2];
+		curNoticeMessage[2] = curNoticeMessage[1];
+		curNoticeMessage[1] = curNoticeMessage[0];
+		SetCurNoticeMessage(_message);
+	}
+	else if (curNoticeMessage.size() == 6) {
+		curNoticeMessage[5] = curNoticeMessage[4];
+		curNoticeMessage[4] = curNoticeMessage[3];
+		curNoticeMessage[3] = curNoticeMessage[2];
+		curNoticeMessage[2] = curNoticeMessage[1];
+		curNoticeMessage[1] = curNoticeMessage[0];
+		SetCurNoticeMessage(_message);
+	}
+	else if (curNoticeMessage.size() == 7) {
+		curNoticeMessage[6] = curNoticeMessage[5];
+		curNoticeMessage[5] = curNoticeMessage[4];
 		curNoticeMessage[4] = curNoticeMessage[3];
 		curNoticeMessage[3] = curNoticeMessage[2];
 		curNoticeMessage[2] = curNoticeMessage[1];

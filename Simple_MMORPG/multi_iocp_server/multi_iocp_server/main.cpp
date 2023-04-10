@@ -232,8 +232,46 @@ bool isMovePossible(int _id, DIRECTION _direction)
 {
 	//clients[_id]._ViewListLock.lock();
 	unordered_set<int> block_vl = clients[_id].block_view_list;
+	unordered_set<int> obj_vl = clients[_id].view_list;
 	//clients[_id]._ViewListLock.unlock();
 	
+	for (auto& obj : clients[_id].view_list) {
+		if (clients[obj]._s_state == ST_SLEEP)
+			obj_vl.erase(obj);
+	}
+	
+	switch (_direction)
+	{
+		case DIRECTION_UP:
+			for (auto& obj : obj_vl) {
+				if (clients[_id]._obj_stat.x == clients[obj]._obj_stat.x &&
+					clients[_id]._obj_stat.y == clients[obj]._obj_stat.y + 1)
+					return false;
+			}
+			break;
+		case DIRECTION_DOWN:
+			for (auto& obj : obj_vl) {
+				if (clients[_id]._obj_stat.x == clients[obj]._obj_stat.x &&
+					clients[_id]._obj_stat.y == clients[obj]._obj_stat.y - 1)
+					return false;
+			}
+			break;
+		case DIRECTION_LEFT:
+			for (auto& obj : obj_vl) {
+				if (clients[_id]._obj_stat.x == clients[obj]._obj_stat.x + 1 &&
+					clients[_id]._obj_stat.y == clients[obj]._obj_stat.y)
+					return false;
+			}
+			break;
+		case DIRECTION_RIGHT:
+			for (auto& obj : obj_vl) {
+				if (clients[_id]._obj_stat.x == clients[obj]._obj_stat.x - 1 &&
+					clients[_id]._obj_stat.y == clients[obj]._obj_stat.y)
+					return false;
+			}
+			break;
+	}
+
 	switch (_direction)
 	{
 	case DIRECTION_UP:
@@ -276,6 +314,40 @@ bool isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction)
 	unordered_set<int> block_vl = clients[_cid].block_view_list;
 	//clients[_cid]._ViewListLock.unlock();
 
+	unordered_set<int> obj_vl = clients[_cid].view_list;
+	//clients[_id]._ViewListLock.unlock();
+
+	switch (_direction)
+	{
+	case DIRECTION_UP:
+		for (auto& obj : obj_vl) {
+			if (clients[_mid]._obj_stat.x == clients[obj]._obj_stat.x &&
+				clients[_mid]._obj_stat.y == clients[obj]._obj_stat.y + 1)
+				return false;
+		}
+		break;
+	case DIRECTION_DOWN:
+		for (auto& obj : obj_vl) {
+			if (clients[_mid]._obj_stat.x == clients[obj]._obj_stat.x &&
+				clients[_mid]._obj_stat.y == clients[obj]._obj_stat.y - 1)
+				return false;
+		}
+		break;
+	case DIRECTION_LEFT:
+		for (auto& obj : obj_vl) {
+			if (clients[_mid]._obj_stat.x == clients[obj]._obj_stat.x + 1 &&
+				clients[_mid]._obj_stat.y == clients[obj]._obj_stat.y)
+				return false;
+		}
+		break;
+	case DIRECTION_RIGHT:
+		for (auto& obj : obj_vl) {
+			if (clients[_mid]._obj_stat.x == clients[obj]._obj_stat.x - 1 &&
+				clients[_mid]._obj_stat.y == clients[obj]._obj_stat.y)
+				return false;
+		}
+		break;
+	}
 
 	switch (_direction)
 	{
@@ -803,6 +875,7 @@ void process_packet(int c_id, char* packet)
 	case CS_ATTACK: {
 		for (auto& obj : clients[c_id].view_list) {
 			if (clients[obj]._s_state == ST_SLEEP) continue;					// 몬스터가 이미 죽었으면 공격 불가
+			clients[c_id].Send_PlayerAttack_Packet(c_id);
 			if (clients[obj]._obj_stat.race == RACE_PLAYER) {				// 플레이어끼리는 공격 불가
 				clients[c_id].Send_PlayerAttack_Packet(c_id);
 				clients[obj].Send_PlayerAttack_Packet(c_id);
@@ -819,7 +892,6 @@ void process_packet(int c_id, char* packet)
 				}
 			}
 		}
-
 
 
 		break;
@@ -1120,7 +1192,7 @@ void Hit_Player(int _n_id, int _p_id)
 	notice += " Attacks a ";
 	notice += clients[_p_id]._obj_stat._name;
 	//notice += " / Player HP to ";
-	//notice += clients[_p_id]._obj_stat.hp;
+	notice += clients[_p_id]._obj_stat.hp;
 	char temp[BUF_SIZE];
 
 	strcpy_s(temp, notice.c_str());
