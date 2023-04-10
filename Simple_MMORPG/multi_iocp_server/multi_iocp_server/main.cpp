@@ -188,6 +188,7 @@ public:
 	void Send_Remove_Packet(int c_id);
 	void Send_Remove_Block(int _id);
 	void Send_StatChange_Packet(int c_id, int n_id);
+	void Send_PlayerAttack_Packet(int c_id);
 };
 
 array<SESSION, MAX_USER + NUM_NPC> clients;
@@ -564,6 +565,16 @@ void SESSION::Send_StatChange_Packet(int c_id, int n_id)
 	clients[c_id].do_send(&packet);
 }
 
+void SESSION::Send_PlayerAttack_Packet(int c_id)
+{
+	SC_PLAYER_ATTACK_PACKET packet;
+	packet.size = sizeof(SC_PLAYER_ATTACK_PACKET);
+	packet.type = SC_PLAYER_ATTACK;
+	packet.id = c_id;
+
+	do_send(&packet);
+}
+
 void disconnect(int c_id);
 
 int get_new_client_id()
@@ -687,7 +698,6 @@ void process_packet(int c_id, char* packet)
 		clients[c_id].send_move_packet(c_id, 0);
 
 		for (auto pl : new_vl) {
-
 			// old_vl에 없는데 new_vl에 있으면 add패킷 보내기
 			if (0 == old_vl.count(pl)) {
 				clients[c_id].send_add_object(pl);
@@ -695,7 +705,6 @@ void process_packet(int c_id, char* packet)
 				clients[c_id].view_list.insert(pl);
 				clients[c_id]._ViewListLock.unlock();
 				clients[pl]._s_state = ST_INGAME;
-
 				
 				if (clients[pl]._obj_stat.race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
 					continue;
@@ -781,8 +790,13 @@ void process_packet(int c_id, char* packet)
 	case CS_ATTACK: {
 		for (auto& obj : clients[c_id].view_list) {
 			if (clients[obj]._s_state == ST_SLEEP) continue;					// 몬스터가 이미 죽었으면 공격 불가
+			if (clients[obj]._obj_stat.race == RACE_PLAYER) {				// 플레이어끼리는 공격 불가
+				clients[c_id].Send_PlayerAttack_Packet(c_id);
+				clients[obj].Send_PlayerAttack_Packet(c_id);
+				continue;
+			}
 			if (distance(c_id, obj) < 2) {										// 공격 성공
-				if (clients[obj]._obj_stat.race == RACE_PLAYER) continue;		// 플레이어끼리는 공격 불가
+				if (clients[obj]._obj_stat.race == RACE_PLAYER) continue;				// 플레이어끼리는 공격 불가			
 				Hit_NPC(c_id, obj);
 
 				for (auto& pl : clients[c_id].view_list) {
@@ -792,6 +806,9 @@ void process_packet(int c_id, char* packet)
 				}
 			}
 		}
+
+
+
 		break;
 	}
 	case CS_CHAT:

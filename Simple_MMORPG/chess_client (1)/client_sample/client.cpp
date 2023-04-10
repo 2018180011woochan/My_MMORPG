@@ -553,6 +553,41 @@ void ProcessPacket(char* ptr)
 		
 		break;
 	}
+	case SC_PLAYER_ATTACK:
+	{
+		SC_REMOVE_OBJECT_PACKET* packet = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(ptr);
+		cout << packet->id << "가 공격함" << endl;
+		if (packet->id == avatar.id) {
+			PlayerSkill[0].m_x = avatar.m_x;
+			PlayerSkill[0].m_y = avatar.m_y - 1;
+			PlayerSkill[0].show();
+			PlayerSkill[1].m_x = avatar.m_x;
+			PlayerSkill[1].m_y = avatar.m_y + 1;
+			PlayerSkill[1].show();
+			PlayerSkill[2].m_x = avatar.m_x - 1;
+			PlayerSkill[2].m_y = avatar.m_y;
+			PlayerSkill[2].show();
+			PlayerSkill[3].m_x = avatar.m_x + 1;
+			PlayerSkill[3].m_y = avatar.m_y;
+			PlayerSkill[3].show();
+		}
+		else {
+			PlayerSkill[0].m_x = players[packet->id].m_x;
+			PlayerSkill[0].m_y = players[packet->id].m_y - 1;
+			PlayerSkill[0].show();
+			PlayerSkill[1].m_x = players[packet->id].m_x;
+			PlayerSkill[1].m_y = players[packet->id].m_y + 1;
+			PlayerSkill[1].show();
+			PlayerSkill[2].m_x = players[packet->id].m_x - 1;
+			PlayerSkill[2].m_y = players[packet->id].m_y;
+			PlayerSkill[2].show();
+			PlayerSkill[3].m_x = players[packet->id].m_x + 1;
+			PlayerSkill[3].m_y = players[packet->id].m_y;
+			PlayerSkill[3].show();
+		}
+		
+		break;
+	}
 	case SC_PARTY:
 	{
 		
@@ -634,6 +669,36 @@ void client_main()
 	avatar.draw_ui();
 	for (auto& pl : players) pl.draw();
 	for (auto& pl : npcs) pl.draw_hp(); 
+
+	for (int i = 0; i < 8; ++i)
+		PlayerSkill[i].idraw();
+
+	// 임시방편
+	if (PlayerSkill[0].isShow())
+	{
+		cnt++;
+		if (cnt > 100)
+		{
+			for (int i = 0; i < 4; ++i)
+			{
+				PlayerSkill[i].hide();
+			}
+			cnt = 0;
+		}
+	}
+	if (PlayerSkill[4].isShow())
+	{
+		cnt++;
+		if (cnt > 100)
+		{
+			for (int i = 4; i < 8; ++i)
+			{
+				PlayerSkill[i].hide();
+			}
+			cnt = 0;
+		}
+	}
+
 
 	chatUI.a_move(630, 730);
 	chatUI.a_draw();
@@ -769,6 +834,8 @@ int main()
 						info += char(event.key.code) + 97;
 						break;
 					}
+
+
 					CS_ATTACK_PACKET p;
 					p.size = sizeof(CS_ATTACK_PACKET);
 					p.type = CS_ATTACK;
