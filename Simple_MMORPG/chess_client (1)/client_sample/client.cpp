@@ -47,10 +47,14 @@ sf::Font g_font;
 sf::Text chatmessage;
 
 vector<sf::Text> curChatMessage;
+vector<sf::Text> curNoticeMessage;
 
 void Login();
 void CreateChatMessage(string _message);
 void SetCurMessage(string _message);
+
+void CreateNoticeMessage(string _message);
+void SetCurNoticeMessage(string _message);
 
 class OBJECT {
 private:
@@ -260,8 +264,8 @@ OBJECT avatar;
 OBJECT players[MAX_USER];
 OBJECT npcs[NUM_NPC];
 OBJECT blocks[NUM_BLOCK];
-OBJECT chaticon;
 OBJECT chatUI;
+OBJECT chatNotice;
 
 vector<OBJECT> PlayerSkill;
 
@@ -279,6 +283,7 @@ sf::Texture* UI_HP;
 sf::Texture* UI_HP_empty;
 sf::Texture* HPBar;
 sf::Texture* ChatUI;
+sf::Texture* Notice;
 sf::Texture* Block;
 
 
@@ -296,6 +301,7 @@ void client_initialize()
 	UI_HP_empty = new sf::Texture;
 	HPBar = new sf::Texture;
 	ChatUI = new sf::Texture;
+	Notice = new sf::Texture;
 	Block = new sf::Texture;
 
 	board->loadFromFile("Texture/Tile/Tile0.png");
@@ -310,6 +316,7 @@ void client_initialize()
 	UI_HP_empty->loadFromFile("Texture/Single/StatusBar/emptyhp.png");
 	HPBar->loadFromFile("Texture/User/hpbar.bmp");
 	ChatUI->loadFromFile("Texture/Single/Window/chat.png");
+	Notice->loadFromFile("Texture/Single/Window/notice.png");
 	Block->loadFromFile("Texture/Tile/Tile22.png");
 
 	MapObj = OBJECT{ *board, 0, 0, 2000, 2000 };
@@ -338,7 +345,7 @@ void client_initialize()
 	}
 
 	chatUI = OBJECT{ *ChatUI, 0, 0, 400, 206 };
-
+	chatNotice = OBJECT{ *Notice, 0, 0, 399, 300 };
 }
 
 void client_finish()
@@ -355,6 +362,7 @@ void client_finish()
 	delete UI_HP_empty;
 	delete HPBar;
 	delete ChatUI;
+	delete Notice;
 	delete Block;
 }
 
@@ -596,17 +604,20 @@ void ProcessPacket(char* ptr)
 	case SC_CHAT:
 	{
 		SC_CHAT_PACKET* p = reinterpret_cast<SC_CHAT_PACKET*>(ptr);
-		string info = "[";
-		if (avatar.id == p->id)
-			info += avatar.my_name;
-		else
-			info += players[p->id].my_name;
-		info += "] : ";
-		info += p->mess;
+		if (p->chat_type == CHATTYPE_SAY) {
+			string info = "[";
+			if (avatar.id == p->id)
+				info += avatar.my_name;
+			else
+				info += players[p->id].my_name;
+			info += "] : ";
+			info += p->mess;
+			CreateChatMessage(info);
+		}
+		else if (p->chat_type == CHATTYPE_NOTICE) {
+			CreateNoticeMessage(p->mess);
+		}
 
-		CreateChatMessage(info);
-
-		cout << "[" << p->id << "] " << p->mess << "\n";
 		break;
 	}
 	default:
@@ -664,6 +675,10 @@ void client_main()
 	}
 	for (auto& bl : blocks) bl.draw_block();
 
+	chatNotice.a_move(20, 650);
+	chatNotice.a_draw();
+	chatUI.a_move(630, 730);
+	chatUI.a_draw();
 
 	//avatar.draw_hp();
 	avatar.draw_ui();
@@ -699,9 +714,7 @@ void client_main()
 		}
 	}
 
-
-	chatUI.a_move(630, 730);
-	chatUI.a_draw();
+	
 
 	chatmessage.setPosition(700, 900);
 
@@ -711,6 +724,14 @@ void client_main()
 		curChatMessage[i].setPosition(650, 850 - i*30);
 
 		g_window->draw(curChatMessage[i]);
+	}
+
+	chatSize = curNoticeMessage.size();
+
+	for (int i = 0; i < chatSize; ++i) {
+		curNoticeMessage[i].setPosition(20, 850 - i * 20);
+
+		g_window->draw(curNoticeMessage[i]);
 	}
 
 	g_window->draw(chatmessage);
@@ -783,6 +804,50 @@ void SetCurMessage(string _message)
 	curChatMessage[0].setString(_message);
 	curChatMessage[0].setFillColor(sf::Color(255, 255, 0));
 	curChatMessage[0].setStyle(sf::Text::Bold);
+	//curChatMessage[0].setCharacterSize(20);
+}
+
+void CreateNoticeMessage(string _message)
+{
+	int chatSize = curNoticeMessage.size();
+
+	if (curNoticeMessage.size() < 5)
+		curNoticeMessage.push_back(sf::Text());
+
+	if (curNoticeMessage.size() == 1) {
+		SetCurNoticeMessage(_message);
+	}
+	else if (curNoticeMessage.size() == 2) {
+		curNoticeMessage[1] = curNoticeMessage[0];
+		SetCurNoticeMessage(_message);
+	}
+	else if (curNoticeMessage.size() == 3) {
+		curNoticeMessage[2] = curNoticeMessage[1];
+		curNoticeMessage[1] = curNoticeMessage[0];
+		SetCurNoticeMessage(_message);
+	}
+	else if (curNoticeMessage.size() == 4) {
+		curNoticeMessage[3] = curNoticeMessage[2];
+		curNoticeMessage[2] = curNoticeMessage[1];
+		curNoticeMessage[1] = curNoticeMessage[0];
+		SetCurNoticeMessage(_message);
+	}
+	else if (curNoticeMessage.size() == 5) {
+		curNoticeMessage[4] = curNoticeMessage[3];
+		curNoticeMessage[3] = curNoticeMessage[2];
+		curNoticeMessage[2] = curNoticeMessage[1];
+		curNoticeMessage[1] = curNoticeMessage[0];
+		SetCurNoticeMessage(_message);
+	}
+}
+
+void SetCurNoticeMessage(string _message)
+{
+	curNoticeMessage[0].setFont(g_font);
+	curNoticeMessage[0].setString(_message);
+	curNoticeMessage[0].setFillColor(sf::Color(255, 255, 0));
+	curNoticeMessage[0].setStyle(sf::Text::Bold);
+	curNoticeMessage[0].setCharacterSize(20);
 }
 
 int main()

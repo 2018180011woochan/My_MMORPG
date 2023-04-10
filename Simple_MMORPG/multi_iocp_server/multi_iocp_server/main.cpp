@@ -189,6 +189,7 @@ public:
 	void Send_Remove_Block(int _id);
 	void Send_StatChange_Packet(int c_id, int n_id);
 	void Send_PlayerAttack_Packet(int c_id);
+	void Send_Notice_Packet(char _message[BUF_SIZE]);
 };
 
 array<SESSION, MAX_USER + NUM_NPC> clients;
@@ -575,6 +576,18 @@ void SESSION::Send_PlayerAttack_Packet(int c_id)
 	do_send(&packet);
 }
 
+void SESSION::Send_Notice_Packet(char _message[BUF_SIZE])
+{
+	SC_CHAT_PACKET chat_packet;
+	chat_packet.size = sizeof(chat_packet) - sizeof(chat_packet.mess) + strlen(_message) + 1;
+	chat_packet.type = SC_CHAT;
+	chat_packet.chat_type = CHATTYPE_NOTICE;
+	chat_packet.id = 9999;
+	strcpy_s(chat_packet.mess, _message);
+
+	do_send(&chat_packet);
+}
+
 void disconnect(int c_id);
 
 int get_new_client_id()
@@ -818,7 +831,7 @@ void process_packet(int c_id, char* packet)
 		SC_CHAT_PACKET chat_packet;
 		chat_packet.size = sizeof(chat_packet) - sizeof(chat_packet.mess) + strlen(p->mess) + 1;
 		chat_packet.type = SC_CHAT;
-		chat_packet.chat_type = CHATTYPE_SHOUT;
+		chat_packet.chat_type = CHATTYPE_SAY;
 		chat_packet.id = c_id;
 		strcpy_s(chat_packet.mess, p->mess);
 
@@ -1102,6 +1115,16 @@ void Hit_Player(int _n_id, int _p_id)
 	int AttackPower = clients[_n_id]._obj_stat.level * 10;
 	clients[_p_id]._obj_stat.hp -= AttackPower;
 
+	string notice;
+	notice += clients[_n_id]._obj_stat._name;
+	notice += " Attacks a ";
+	notice += clients[_p_id]._obj_stat._name;
+	//notice += " / Player HP to ";
+	//notice += clients[_p_id]._obj_stat.hp;
+	char temp[BUF_SIZE];
+
+	strcpy_s(temp, notice.c_str());
+	clients[_p_id].Send_Notice_Packet(temp);
 	clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);	
 	for (auto& pl : clients[_p_id].view_list) {
 		if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
