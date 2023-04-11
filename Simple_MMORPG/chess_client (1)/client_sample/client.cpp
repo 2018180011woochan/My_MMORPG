@@ -175,8 +175,8 @@ public:
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
 
-		//m_HPBar.setPosition(rx, ry);
-		//g_window->draw(m_HPBar);
+		m_HPBar.setPosition(rx, ry);
+		g_window->draw(m_HPBar);
 
 		m_name.setPosition(rx, ry - 40);
 		g_window->draw(m_name);
@@ -702,6 +702,9 @@ void client_main()
 	//avatar.draw_hp();
 	avatar.draw_ui();
 	for (auto& pl : players) pl.draw();
+	for (auto& party : avatar.party_list) {
+		players[party].draw_hp();
+	}
 	for (auto& pl : npcs) pl.draw_hp(); 
 
 	for (int i = 0; i < 8; ++i)
