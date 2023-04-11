@@ -123,6 +123,7 @@ struct OBJ_STAT
 	int		exp, maxexp;
 	int		hp, hpmax;
 	SECTOR  sector;
+	bool	isDead;
 };
 
 struct BLOCK {
@@ -778,6 +779,20 @@ void process_packet(int c_id, char* packet)
 		clients[c_id]._obj_stat.x = x;
 		clients[c_id]._obj_stat.y = y;
 
+		// 깨워주는 코드 부하가 엄청날듯
+		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
+			if (clients[i]._obj_stat.sector != clients[c_id]._obj_stat.sector) continue;
+			if (c_id == clients[i]._obj_stat._id) continue;
+
+			if (RANGE > distance(c_id, i)) {
+				if (clients[i]._obj_stat.race == RACE_END ||
+					clients[i]._obj_stat.race == RACE_BLOCK ||					
+					clients[i]._obj_stat.isDead) continue;
+				clients[i]._s_state = ST_INGAME;
+			}
+		}
+		///////////////////////////////////////////
+
 		SetSector(clients[c_id]._obj_stat.race, c_id);
 
 		clients[c_id]._ViewListLock.lock();
@@ -787,8 +802,9 @@ void process_packet(int c_id, char* packet)
 		unordered_set<int> new_vl;
 		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
 			if (clients[i]._obj_stat.sector != clients[c_id]._obj_stat.sector) continue;
-			//if (ST_INGAME != clients[i]._s_state) continue;
-			if (ST_FREE == clients[i]._s_state) continue;
+			if (ST_INGAME != clients[i]._s_state) continue;
+			//if (ST_FREE == clients[i]._s_state) continue;
+			//if (ST_SLEEP == clients[i]._s_state) continue;
 			if (c_id == clients[i]._obj_stat._id) continue;
 
 			if (RANGE > distance(c_id, i))
@@ -1081,6 +1097,7 @@ void Move_NPC(int _npc_id, int _c_id)
 		if (clients[i]._obj_stat.sector != clients[_npc_id]._obj_stat.sector) continue;
 		if (clients[i]._s_state != ST_INGAME) continue;
 		if (distance(_npc_id, i) <= RANGE) old_vl.insert(i);
+		
 	}
 
 	if (clients[_npc_id]._attacktype == ATTACKTYPE_PEACE)
@@ -1216,6 +1233,7 @@ void Hit_NPC(int _p_id, int n_id)
 
 	if (clients[n_id]._obj_stat.hp <= 0) {		// 몬스터 사망
 		clients[n_id]._s_state = ST_SLEEP;
+		clients[n_id]._obj_stat.isDead = true;
 		clients[_p_id].Send_Remove_Packet(n_id);	// 공격을 한 플레이어에게 전송
 
 		Combat_Reward(_p_id, n_id);
@@ -1233,7 +1251,7 @@ void Hit_NPC(int _p_id, int n_id)
 
 void Hit_Player(int _n_id, int _p_id)
 {
-	int AttackPower = clients[_n_id]._obj_stat.level * 10;
+	int AttackPower = clients[_n_id]._obj_stat.level * 2;
 	clients[_p_id]._obj_stat.hp -= AttackPower;
 
 	string notice;
@@ -1258,7 +1276,11 @@ void Combat_Reward(int p_id, int n_id)
 {
 	// 몬스터 처치 보상
 	int rewardEXP = clients[n_id]._obj_stat.level * clients[n_id]._obj_stat.level * 2;
-	clients[p_id]._obj_stat.exp += rewardEXP;
+	if (clients[n_id]._attacktype == ATTACKTYPE_AGRO)
+		clients[p_id]._obj_stat.exp += rewardEXP * 2;
+	else
+		clients[p_id]._obj_stat.exp += rewardEXP;
+	
 
 	if (clients[p_id]._obj_stat.exp > clients[p_id]._obj_stat.maxexp) {
 		clients[p_id]._obj_stat.level += 1;

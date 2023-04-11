@@ -394,7 +394,8 @@ void ProcessPacket(char* ptr)
 		avatar.move(packet->x, packet->y);
 		g_left_x = packet->x - 8;
 		g_top_y = packet->y - 8;
-
+		avatar.m_PlayerEmptyHP.setTextureRect(sf::IntRect(0, 0, 0, 0));
+	
 		avatar.show();
 
 		break;
@@ -494,6 +495,8 @@ void ProcessPacket(char* ptr)
 				char lev[10];
 				sprintf_s(lev, "%d", my_packet->level);
 				avatar.set_level(lev);
+				avatar.level = my_packet->level;
+
 
 				for (int i = MAX_USER; i < NUM_NPC; ++i)
 				{
@@ -506,7 +509,7 @@ void ProcessPacket(char* ptr)
 				}
 			}
 
-			avatar.level = my_packet->level;
+			
 			avatar.hp = my_packet->hp;
 			avatar.hpmax = my_packet->hpmax;
 
@@ -567,7 +570,6 @@ void ProcessPacket(char* ptr)
 	case SC_PLAYER_ATTACK:
 	{
 		SC_REMOVE_OBJECT_PACKET* packet = reinterpret_cast<SC_REMOVE_OBJECT_PACKET*>(ptr);
-		cout << packet->id << "가 공격함" << endl;
 		if (packet->id == avatar.id) {
 			PlayerSkill[0].m_x = avatar.m_x;
 			PlayerSkill[0].m_y = avatar.m_y - 1;
