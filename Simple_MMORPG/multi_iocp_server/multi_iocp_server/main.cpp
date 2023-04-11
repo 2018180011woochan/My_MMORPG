@@ -65,6 +65,8 @@ void Save_UserInfo(int db_id, int c_id);
 SECTOR GetSector(int _race, int _id);
 void SetSector(int _race, int _id);
 
+string Notice_Attack(int _attackID, int _targetID);
+
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME, ST_ACTIVE, ST_SLEEP};
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND, OP_RANDOM_MOVE };
@@ -1225,6 +1227,9 @@ void Hit_NPC(int _p_id, int n_id)
 {
 	clients[n_id]._obj_stat.hp -= clients[_p_id]._obj_stat.level * 50;
 	
+	char temp[BUF_SIZE];
+	strcpy_s(temp, Notice_Attack(_p_id, n_id).c_str());
+	clients[_p_id].Send_Notice_Packet(temp);
 	clients[_p_id].Send_StatChange_Packet(_p_id, n_id);	// 몬스터 공격하여 체력이 변하면 플레이어에게 전송
 	for (auto& pl : clients[_p_id].view_list) {
 		if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
@@ -1253,16 +1258,9 @@ void Hit_Player(int _n_id, int _p_id)
 {
 	int AttackPower = clients[_n_id]._obj_stat.level * 2;
 	clients[_p_id]._obj_stat.hp -= AttackPower;
-
-	string notice;
-	notice += clients[_n_id]._obj_stat._name;
-	notice += " Attacks a ";
-	notice += clients[_p_id]._obj_stat._name;
-	//notice += " / Player HP to ";
-	notice += clients[_p_id]._obj_stat.hp;
+	
 	char temp[BUF_SIZE];
-
-	strcpy_s(temp, notice.c_str());
+	strcpy_s(temp, Notice_Attack(_n_id, _p_id).c_str());
 	clients[_p_id].Send_Notice_Packet(temp);
 	clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);	
 	for (auto& pl : clients[_p_id].view_list) {
@@ -1270,6 +1268,18 @@ void Hit_Player(int _n_id, int _p_id)
 		clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송	
 	}
 
+}
+
+string Notice_Attack(int _attackID, int _targetID)
+{
+	string notice;
+	notice += clients[_attackID]._obj_stat._name;
+	notice += " Attacks a ";
+	notice += clients[_targetID]._obj_stat._name;
+	notice += " / Player HP to ";
+	notice += to_string(clients[_targetID]._obj_stat.hp);
+
+	return notice;
 }
 
 void Combat_Reward(int p_id, int n_id)

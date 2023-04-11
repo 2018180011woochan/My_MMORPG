@@ -348,7 +348,7 @@ void client_initialize()
 	}
 
 	chatUI = OBJECT{ *ChatUI, 0, 0, 400, 206 };
-	chatNotice = OBJECT{ *Notice, 0, 0, 399, 300 };
+	chatNotice = OBJECT{ *Notice, 0, 0, 521, 300 };
 }
 
 void client_finish()
