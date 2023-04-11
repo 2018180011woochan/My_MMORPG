@@ -28,9 +28,6 @@ constexpr int MONSTER_RANGE = 5;
 #pragma comment(lib, "MSWSock.lib")
 using namespace std;
 
-// 내일할거 : 파티하고 자잘한버그고치고(체력바, 이름색깔)
-// 밸런스패치쫌하고(경험치, )
-
 // 코드도 쫌 나누고,,
 //내일까지못하겠다 수요일까지 하는걸로,,,
 
@@ -1265,9 +1262,38 @@ void Hit_Player(int _n_id, int _p_id)
 	clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);	
 	for (auto& pl : clients[_p_id].view_list) {
 		if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
-		clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송	
+		clients[pl].Send_StatChange_Packet(pl, _p_id);	
 	}
 
+	// 플레이어 사망
+	if (clients[_p_id]._obj_stat.hp <= 0) {
+		clients[_p_id]._obj_stat.hp = clients[_p_id]._obj_stat.hpmax;
+		clients[_p_id]._obj_stat.exp = clients[_p_id]._obj_stat.exp / 2;
+		if (!isStressTest) {
+			clients[_p_id]._obj_stat.x = 0;
+			clients[_p_id]._obj_stat.y = 0;
+		}
+		else {
+			clients[_p_id]._obj_stat.x = rand() % W_WIDTH;
+			clients[_p_id]._obj_stat.y = rand() % W_HEIGHT;
+		}
+		
+
+		string notice;
+		notice += clients[_p_id]._obj_stat._name;
+		notice += " Dead!";
+		strcpy_s(temp, notice.c_str());
+		clients[_p_id].Send_Notice_Packet(temp);
+		clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);
+		clients[_p_id].send_move_packet(_p_id, 0);
+
+		for (auto& pl : clients[_p_id].view_list) {
+			if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
+			clients[_p_id].Send_Notice_Packet(temp);
+			clients[pl].Send_StatChange_Packet(pl, _p_id);
+			clients[pl].send_move_packet(_p_id, 0);
+		}
+	}
 }
 
 string Notice_Attack(int _attackID, int _targetID)
@@ -1276,7 +1302,10 @@ string Notice_Attack(int _attackID, int _targetID)
 	notice += clients[_attackID]._obj_stat._name;
 	notice += " Attacks a ";
 	notice += clients[_targetID]._obj_stat._name;
-	notice += " / Player HP to ";
+	if (_targetID < MAX_USER)
+		notice += " / Player HP to ";
+	else
+		notice += " / Monster HP to ";
 	notice += to_string(clients[_targetID]._obj_stat.hp);
 
 	return notice;
@@ -1298,6 +1327,14 @@ void Combat_Reward(int p_id, int n_id)
 		clients[p_id]._obj_stat.hp = clients[p_id]._obj_stat.hpmax;
 		clients[p_id]._obj_stat.maxexp = clients[p_id]._obj_stat.level * 100;
 		clients[p_id]._obj_stat.exp = 0;
+
+		string notice;
+		notice += clients[p_id]._obj_stat._name;
+		notice += " Level UP! to ";
+		notice += to_string(clients[p_id]._obj_stat.level);
+		char temp[BUF_SIZE];
+		strcpy_s(temp, notice.c_str());
+		clients[p_id].Send_Notice_Packet(temp);
 	}
 }
 
