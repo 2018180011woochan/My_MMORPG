@@ -39,6 +39,8 @@ int g_left_x;
 int g_top_y;
 
 bool g_isChat;
+bool party_invite = false;
+int temp_id = 99999;
 
 char Nickname[20] = "temp";
 
@@ -53,8 +55,8 @@ void Login();
 void CreateChatMessage(string _message);
 void SetCurMessage(string _message);
 
-void CreateNoticeMessage(string _message);
-void SetCurNoticeMessage(string _message);
+void CreateNoticeMessage(string _message, CHATTYPE _chattype);
+void SetCurNoticeMessage(string _message, CHATTYPE _chattype);
 
 class OBJECT {
 private:
@@ -71,6 +73,7 @@ public:
 	int exp, maxexp;
 	int hp, hpmax;
 	char my_name[NAME_SIZE];
+	vector<int> party_list;
 
 	sf::Sprite m_HPBar;
 	sf::Sprite m_UIHP;
@@ -596,9 +599,25 @@ void ProcessPacket(char* ptr)
 		
 		break;
 	}
+	case SC_PARTY_INVITE:
+	{
+		SC_PARTY_INVITE_PACKET* p = reinterpret_cast<SC_PARTY_INVITE_PACKET*>(ptr);
+		string info = "[";
+		info += players[p->id].my_name;
+		info += "] send party invite (Y/N)";
+		CreateNoticeMessage(info, CHATTYPE_TELL);
+		party_invite = true;
+		temp_id = p->id;
+		break;
+	}
 	case SC_PARTY:
 	{
-		
+		SC_PARTY_PACKET* p = reinterpret_cast<SC_PARTY_PACKET*>(ptr);
+		avatar.party_list.push_back(p->id);
+		string info = "[";
+		info += players[p->id].my_name;
+		info += "] is your party";
+		CreateNoticeMessage(info, CHATTYPE_TELL);
 		break;
 	}
 	case SC_CHAT:
@@ -615,7 +634,7 @@ void ProcessPacket(char* ptr)
 			CreateChatMessage(info);
 		}
 		else if (p->chat_type == CHATTYPE_NOTICE) {
-			CreateNoticeMessage(p->mess);
+			CreateNoticeMessage(p->mess, CHATTYPE_NOTICE);
 		}
 
 		break;
@@ -748,12 +767,12 @@ void Login()
 {
 	int db_id = 0;
 	
-	if (!isStressTest) {
+	/*if (!isStressTest) {
 		cout << "ID를 입력하세요 ";
 		cin >> db_id;
 		cout << "닉네임을 입력하세요 ";
 		cin >> Nickname;
-	}
+	}*/
 	
 	CS_LOGIN_PACKET p;
 	p.size = sizeof(CS_LOGIN_PACKET);
@@ -807,7 +826,7 @@ void SetCurMessage(string _message)
 	//curChatMessage[0].setCharacterSize(20);
 }
 
-void CreateNoticeMessage(string _message)
+void CreateNoticeMessage(string _message, CHATTYPE _chattype)
 {
 	int chatSize = curNoticeMessage.size();
 
@@ -815,29 +834,29 @@ void CreateNoticeMessage(string _message)
 		curNoticeMessage.push_back(sf::Text());
 
 	if (curNoticeMessage.size() == 1) {
-		SetCurNoticeMessage(_message);
+		SetCurNoticeMessage(_message, _chattype);
 	}
 	else if (curNoticeMessage.size() == 2) {
 		curNoticeMessage[1] = curNoticeMessage[0];
-		SetCurNoticeMessage(_message);
+		SetCurNoticeMessage(_message, _chattype);
 	}
 	else if (curNoticeMessage.size() == 3) {
 		curNoticeMessage[2] = curNoticeMessage[1];
 		curNoticeMessage[1] = curNoticeMessage[0];
-		SetCurNoticeMessage(_message);
+		SetCurNoticeMessage(_message, _chattype);
 	}
 	else if (curNoticeMessage.size() == 4) {
 		curNoticeMessage[3] = curNoticeMessage[2];
 		curNoticeMessage[2] = curNoticeMessage[1];
 		curNoticeMessage[1] = curNoticeMessage[0];
-		SetCurNoticeMessage(_message);
+		SetCurNoticeMessage(_message, _chattype);
 	}
 	else if (curNoticeMessage.size() == 5) {
 		curNoticeMessage[4] = curNoticeMessage[3];
 		curNoticeMessage[3] = curNoticeMessage[2];
 		curNoticeMessage[2] = curNoticeMessage[1];
 		curNoticeMessage[1] = curNoticeMessage[0];
-		SetCurNoticeMessage(_message);
+		SetCurNoticeMessage(_message, _chattype);
 	}
 	else if (curNoticeMessage.size() == 6) {
 		curNoticeMessage[5] = curNoticeMessage[4];
@@ -845,7 +864,7 @@ void CreateNoticeMessage(string _message)
 		curNoticeMessage[3] = curNoticeMessage[2];
 		curNoticeMessage[2] = curNoticeMessage[1];
 		curNoticeMessage[1] = curNoticeMessage[0];
-		SetCurNoticeMessage(_message);
+		SetCurNoticeMessage(_message, _chattype);
 	}
 	else if (curNoticeMessage.size() == 7) {
 		curNoticeMessage[6] = curNoticeMessage[5];
@@ -854,15 +873,18 @@ void CreateNoticeMessage(string _message)
 		curNoticeMessage[3] = curNoticeMessage[2];
 		curNoticeMessage[2] = curNoticeMessage[1];
 		curNoticeMessage[1] = curNoticeMessage[0];
-		SetCurNoticeMessage(_message);
+		SetCurNoticeMessage(_message, _chattype);
 	}
 }
 
-void SetCurNoticeMessage(string _message)
+void SetCurNoticeMessage(string _message, CHATTYPE _chattype)
 {
 	curNoticeMessage[0].setFont(g_font);
 	curNoticeMessage[0].setString(_message);
-	curNoticeMessage[0].setFillColor(sf::Color(255, 255, 0));
+	if (_chattype == CHATTYPE_NOTICE)
+		curNoticeMessage[0].setFillColor(sf::Color(255, 255, 0));
+	if (_chattype == CHATTYPE_TELL)
+		curNoticeMessage[0].setFillColor(sf::Color(255, 0, 0));
 	curNoticeMessage[0].setStyle(sf::Text::Bold);
 	curNoticeMessage[0].setCharacterSize(20);
 }
@@ -911,13 +933,45 @@ int main()
 				case sf::Keyboard::Down:
 					direction = DIRECTION::DIRECTION_DOWN;
 					break;
+				case sf::Keyboard::Y:
+					if (party_invite) {
+						CS_PARTY_PACKET p;
+						p.size = sizeof(CS_PARTY_PACKET);
+						p.type = CS_PARTY;
+						p.id = avatar.id;
+						p.allow = true;
+						p.master_id = temp_id;
+
+						send_packet(&p);
+					}
+					party_invite = false;
+					break;
+				case sf::Keyboard::N:
+					if (party_invite) {
+						CS_PARTY_PACKET p;
+						p.size = sizeof(CS_PARTY_PACKET);
+						p.type = CS_PARTY;
+						p.id = avatar.id;
+						p.allow = false;
+						p.master_id = temp_id;
+
+						send_packet(&p);
+					}
+					party_invite = false;
+					break;
+				case sf::Keyboard::C:
+					CS_PARTY_INVITE_PACKET party_p;
+					party_p.size = sizeof(CS_PARTY_INVITE_PACKET);
+					party_p.type = CS_PARTY_INVITE;
+					party_p.master_id = avatar.id;
+
+					send_packet(&party_p);
+					break;
 				case sf::Keyboard::A:	// 공격
 					if (g_isChat) {
 						info += char(event.key.code) + 97;
 						break;
 					}
-
-
 					CS_ATTACK_PACKET p;
 					p.size = sizeof(CS_ATTACK_PACKET);
 					p.type = CS_ATTACK;

@@ -28,6 +28,12 @@ constexpr int MONSTER_RANGE = 5;
 #pragma comment(lib, "MSWSock.lib")
 using namespace std;
 
+// 내일할거 : 파티하고 자잘한버그고치고(체력바, 이름색깔)
+// 밸런스패치쫌하고(경험치, )
+
+// 코드도 쫌 나누고,,
+//내일까지못하겠다 수요일까지 하는걸로,,,
+
 //////////////// DB //////////////
 SQLHENV henv;
 SQLHDBC hdbc;
@@ -139,6 +145,8 @@ public:
 	OBJ_STAT _obj_stat;
 	unordered_set <int> view_list;
 	unordered_set <int> block_view_list;
+
+	vector<int> my_party;
 
 	ATTACKTYPE _attacktype;
 	MOVETYPE _movetype;
@@ -921,7 +929,42 @@ void process_packet(int c_id, char* packet)
 	}
 	case CS_PARTY_INVITE:
 	{
-		
+		CS_PARTY_INVITE_PACKET* p = reinterpret_cast<CS_PARTY_INVITE_PACKET*>(packet);
+		for (int& connected_id : ConnectedPlayer) {
+			if (clients[connected_id]._obj_stat._id == p->master_id) continue;
+			if (distance(connected_id, p->master_id) < 2)
+			{
+				SC_PARTY_INVITE_PACKET party_packet;
+				party_packet.size = sizeof(SC_PARTY_INVITE_PACKET);
+				party_packet.type = SC_PARTY_INVITE;
+				party_packet.id = p->master_id;
+
+				clients[connected_id].do_send(&party_packet);
+			}
+
+		}
+		break;
+	}
+	case CS_PARTY:
+	{
+		CS_PARTY_PACKET* p = reinterpret_cast<CS_PARTY_PACKET*>(packet);
+		if (true == p->allow) {
+			clients[p->master_id].my_party.push_back(p->id);
+			clients[p->id].my_party.push_back(p->master_id);
+
+			SC_PARTY_PACKET send_p;
+			send_p.type = SC_PARTY;
+			send_p.size = sizeof(SC_PARTY_PACKET);
+			send_p.id = p->master_id;
+
+			clients[p->id].do_send(&send_p);
+
+			SC_PARTY_PACKET send_p2;
+			send_p2.type = SC_PARTY;
+			send_p2.size = sizeof(SC_PARTY_PACKET);
+			send_p2.id = p->id;
+			clients[p->master_id].do_send(&send_p2);
+		}
 		break;
 	}
 	}

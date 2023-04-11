@@ -12,7 +12,7 @@ constexpr int MAX_USER = 10000;
 constexpr int NUM_NPC = 200000;
 constexpr int NUM_BLOCK = 80000;
 
-bool isStressTest = true;
+bool isStressTest = false;
 
 // Packet ID
 constexpr char CS_LOGIN = 0;
@@ -20,6 +20,7 @@ constexpr char CS_MOVE = 1;
 constexpr char CS_ATTACK = 2;
 constexpr char CS_CHAT = 3;
 constexpr char CS_PARTY_INVITE = 4;
+constexpr char CS_PARTY = 5;
 
 constexpr char SC_LOGIN_OK = 11;
 constexpr char SC_LOGIN_FAIL = 12;
@@ -29,7 +30,8 @@ constexpr char SC_MOVE_OBJECT = 15;
 constexpr char SC_CHAT = 16;
 constexpr char SC_STAT_CHANGE = 17;
 constexpr char SC_PLAYER_ATTACK = 18;
-constexpr char SC_PARTY = 19;
+constexpr char SC_PARTY_INVITE = 19;
+constexpr char SC_PARTY = 20;
 
 #pragma pack (push, 1)
 struct CS_LOGIN_PACKET {
@@ -64,6 +66,14 @@ struct CS_PARTY_INVITE_PACKET {
 	unsigned char size;
 	char	type;
 	int		master_id;
+};
+
+struct CS_PARTY_PACKET {
+	unsigned char size;
+	char	type;
+	int		master_id;
+	int		id;
+	bool	allow;
 };
 ///////////////////////////////////////////////////
 
@@ -137,6 +147,12 @@ struct SC_STAT_CHANGE_PACKET {
 
 /////////////////////////////////////////////////// 
 struct SC_PLAYER_ATTACK_PACKET {	// ±¸ÇöÁß...
+	unsigned char size;
+	char	type;
+	int		id;
+};
+
+struct SC_PARTY_INVITE_PACKET {
 	unsigned char size;
 	char	type;
 	int		id;
