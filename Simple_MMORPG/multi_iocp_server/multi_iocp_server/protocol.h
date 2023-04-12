@@ -1,3 +1,8 @@
+#pragma once
+#ifndef __PROTOCOL__H_
+#define __PROTOCOL__H_
+
+
 constexpr int PORT_NUM = 4000;
 constexpr int BUF_SIZE = 200;
 constexpr int NAME_SIZE = 20;
@@ -12,7 +17,7 @@ constexpr int MAX_USER = 10000;
 constexpr int NUM_NPC = 200000;
 constexpr int NUM_BLOCK = 80000;
 
-bool isStressTest = false;
+
 
 // Packet ID
 constexpr char CS_LOGIN = 0;
@@ -121,6 +126,7 @@ struct SC_MOVE_OBJECT_PACKET {
 	char	type;
 	int	id;
 	short	x, y;
+	int		hp, hpmax;
 	unsigned int client_time;
 };
 
@@ -166,3 +172,6 @@ struct SC_PARTY_PACKET {
 ///////////////////////////////////////////////////
 
 #pragma pack (pop)
+
+
+#endif // !__PROTOCOL__H_

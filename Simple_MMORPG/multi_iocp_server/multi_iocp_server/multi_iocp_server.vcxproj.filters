@@ -16,10 +16,19 @@
     <Filter Include="헤더 파일\include">
       <UniqueIdentifier>{a4f1242b-a81c-40bd-ad88-0998bc904d3f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Session">
+      <UniqueIdentifier>{07a2c126-e359-4f16-ae63-9047c31e16af}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>소스 파일\Session</Filter>
+    </ClCompile>
+    <ClCompile Include="SessionManager.cpp">
+      <Filter>소스 파일\Session</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +52,18 @@
     </ClInclude>
     <ClInclude Include="Enum.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>소스 파일\Session</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Include.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SessionManager.h">
+      <Filter>소스 파일\Session</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -772,12 +772,12 @@ void Login()
 {
 	int db_id = 0;
 	
-	/*if (!isStressTest) {
+	//if (!isStressTest) {
 		cout << "ID를 입력하세요 ";
 		cin >> db_id;
 		cout << "닉네임을 입력하세요 ";
 		cin >> Nickname;
-	}*/
+	//}
 	
 	CS_LOGIN_PACKET p;
 	p.size = sizeof(CS_LOGIN_PACKET);
