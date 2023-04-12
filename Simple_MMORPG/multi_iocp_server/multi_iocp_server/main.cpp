@@ -1,7 +1,16 @@
 #include "Include.h"
 #include "SessionManager.h"
 
-vector<int> ConnectedPlayer;
+// 해야댈거
+// 로그인 실패 만들기 O
+// 죽었을때 시야처리 잘 안되는거 수정 O
+// 파티 경험치 공유 O
+// 플레이어 5초마다 HP회복
+// 몬스터 사망후 30초후 부활
+// 무찔렀을 경우 경험치 : 레벨 * 레벨 * 2
+// 어그로, 로밍 2배
+// 공격속도 1초에 한번
+// 몬스터 잡았을때 경험치 메시지 O
 
 HANDLE g_h_iocp;
 SOCKET g_s_socket;
@@ -17,8 +26,24 @@ void process_packet(int c_id, char* packet)
 		if (p->name[0] == '\0')
 			break;
 
-		//if (!isStressTest)
-			GSessionManager.isAllowAccess(p->db_id, c_id);
+		for (int i = 0; i < MAX_USER; ++i)
+		{
+			if (GSessionManager.clients[i]._obj_stat._db_id == p->db_id)
+			{
+				if (GSessionManager.clients[i]._s_state == ST_INGAME)
+				{
+					// loginfail보내기
+					SC_LOGIN_FAIL_PACKET login_fail_packet;
+					login_fail_packet.size = sizeof(SC_LOGIN_FAIL_PACKET);
+					login_fail_packet.type = SC_LOGIN_FAIL;
+					login_fail_packet.reason = 1;
+					GSessionManager.clients[c_id].do_send(&login_fail_packet);
+					return;
+				}
+			}
+		}
+
+		GSessionManager.isAllowAccess(p->db_id, c_id);
 
 		GSessionManager.clients[c_id]._lock.lock();
 		strcpy_s(GSessionManager.clients[c_id]._obj_stat._name, p->name);
@@ -29,7 +54,7 @@ void process_packet(int c_id, char* packet)
 		GSessionManager.clients[c_id]._s_state = ST_INGAME;
 		GSessionManager.clients[c_id]._lock.unlock();
 
-		ConnectedPlayer.push_back(c_id);
+		GSessionManager.ConnectedPlayer.push_back(c_id);
 
 		for (int i = 0; i < MAX_USER; ++i) {
 			auto& pl = GSessionManager.clients[i];
@@ -252,7 +277,7 @@ void process_packet(int c_id, char* packet)
 		chat_packet.id = c_id;
 		strcpy_s(chat_packet.mess, p->mess);
 
-		for (int& connected_id : ConnectedPlayer)
+		for (int& connected_id : GSessionManager.ConnectedPlayer)
 			GSessionManager.clients[connected_id].do_send(&chat_packet);
 
 		cout << "[" << GSessionManager.clients[c_id]._obj_stat._name << "] : " << p->mess << "\n";
@@ -261,7 +286,7 @@ void process_packet(int c_id, char* packet)
 	case CS_PARTY_INVITE:
 	{
 		CS_PARTY_INVITE_PACKET* p = reinterpret_cast<CS_PARTY_INVITE_PACKET*>(packet);
-		for (int& connected_id : ConnectedPlayer) {
+		for (int& connected_id : GSessionManager.ConnectedPlayer) {
 			if (GSessionManager.clients[connected_id]._obj_stat._id == p->master_id) continue;
 			if (GSessionManager.distance(connected_id, p->master_id) < 2)
 			{
@@ -283,18 +308,18 @@ void process_packet(int c_id, char* packet)
 			GSessionManager.clients[p->master_id].my_party.push_back(p->id);
 			GSessionManager.clients[p->id].my_party.push_back(p->master_id);
 
-			SC_PARTY_PACKET send_p;
-			send_p.type = SC_PARTY;
-			send_p.size = sizeof(SC_PARTY_PACKET);
-			send_p.id = p->master_id;
+			SC_PARTY_PACKET send_player;
+			send_player.type = SC_PARTY;
+			send_player.size = sizeof(SC_PARTY_PACKET);
+			send_player.id = p->master_id;
 
-			GSessionManager.clients[p->id].do_send(&send_p);
+			GSessionManager.clients[p->id].do_send(&send_player);
 
-			SC_PARTY_PACKET send_p2;
-			send_p2.type = SC_PARTY;
-			send_p2.size = sizeof(SC_PARTY_PACKET);
-			send_p2.id = p->id;
-			GSessionManager.clients[p->master_id].do_send(&send_p2);
+			SC_PARTY_PACKET send_another_player;
+			send_another_player.type = SC_PARTY;
+			send_another_player.size = sizeof(SC_PARTY_PACKET);
+			send_another_player.id = p->id;
+			GSessionManager.clients[p->master_id].do_send(&send_another_player);
 		}
 		break;
 	}
@@ -410,26 +435,26 @@ void do_ai_ver_heat_beat()
 	for (;;) {
 		auto start_t = chrono::system_clock::now();
 
-		for (int i = MAX_USER; i < MAX_USER + NUM_NPC; ++i)
+		for (int npc = MAX_USER; npc < MAX_USER + NUM_NPC; ++npc)
 		{
-			if (GSessionManager.clients[i]._s_state == ST_SLEEP) continue;
-			for (auto& c_id : ConnectedPlayer)
+			if (GSessionManager.clients[npc]._s_state == ST_SLEEP) continue;
+			for (auto& c_id : GSessionManager.ConnectedPlayer)
 			{
-				if (GSessionManager.clients[c_id]._obj_stat.sector != GSessionManager.clients[i]._obj_stat.sector) continue;
+				if (GSessionManager.clients[c_id]._obj_stat.sector != GSessionManager.clients[npc]._obj_stat.sector) continue;
 
-				if (GSessionManager.distance(i, c_id) < RANGE)
+				if (GSessionManager.distance(npc, c_id) < RANGE)
 				{
 					auto ex_over = new OVER_EXP;
 					ex_over->_comp_type = OP_RANDOM_MOVE;
 					ex_over->target_id = c_id;
-					PostQueuedCompletionStatus(g_h_iocp, 1, i, &ex_over->_over);
+					PostQueuedCompletionStatus(g_h_iocp, 1, npc, &ex_over->_over);
 				}
-				else if (GSessionManager.distance(i, c_id) < RANGE + 1)
+				else if (GSessionManager.distance(npc, c_id) < RANGE + 1)
 				{
 					GSessionManager.clients[c_id]._ViewListLock.lock();
-					GSessionManager.clients[c_id].view_list.erase(i);
+					GSessionManager.clients[c_id].view_list.erase(npc);
 					GSessionManager.clients[c_id]._ViewListLock.unlock();
-					GSessionManager.clients[c_id].Send_Remove_Packet(i);
+					GSessionManager.clients[c_id].Send_Remove_Packet(npc);
 				}
 			}
 
@@ -471,7 +496,7 @@ int main()
 	AcceptEx(g_s_socket, c_socket, a_over._send_buf, 0, addr_size + 16, addr_size + 16, 0, &a_over._over);
 
 	vector <thread> worker_threads;
-	for (int i = 0; i < 6; ++i)
+	for (int i = 0; i < 9; ++i)
 		worker_threads.emplace_back(do_worker);
 
 	thread ai_thread{ do_ai_ver_heat_beat };

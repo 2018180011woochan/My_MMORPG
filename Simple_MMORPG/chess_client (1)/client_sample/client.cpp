@@ -97,7 +97,7 @@ public:
 		m_UIHP.setTextureRect(sf::IntRect(tx, ty, tx2, ty2));
 		m_PlayerUI.setTexture(playerUI);
 		m_PlayerUI.setTextureRect(sf::IntRect(ux, uy, ux2, uy2));
-		m_PlayerEmptyHP.setTexture(playerUI_empty);
+		m_PlayerEmptyHP.setTexture(playerUI_empty); 
 		m_PlayerEmptyHP.setTextureRect(sf::IntRect(ex, ey, ex2, ey2));
 		set_name("NONAME", false);
 		set_level(0);
@@ -168,13 +168,17 @@ public:
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
 	}
-	void draw_hp() {
+	void draw_hp(bool isParty) {
 		if (false == m_showing) return;
 		float rx = (m_x - g_left_x) * 65.0f + 8;
 		float ry = (m_y - g_top_y) * 65.0f + 8;
 		m_sprite.setPosition(rx, ry);
 		g_window->draw(m_sprite);
 
+		if (isParty)
+			m_HPBar.setColor(sf::Color(0, 0, 255));
+		else
+			m_HPBar.setColor(sf::Color(255, 0, 0));
 		m_HPBar.setPosition(rx, ry);
 		g_window->draw(m_HPBar);
 
@@ -402,7 +406,16 @@ void ProcessPacket(char* ptr)
 	}
 	case SC_LOGIN_FAIL:
 	{
-		
+		SC_LOGIN_FAIL_PACKET* packet = reinterpret_cast<SC_LOGIN_FAIL_PACKET*>(ptr);
+		switch (packet->reason)
+		{
+		case 1:
+			cout << "이미 접속한 ID입니다\n";
+			Login();
+			break;
+		default:
+			break;
+		}
 		break;
 	}
 
@@ -618,7 +631,7 @@ void ProcessPacket(char* ptr)
 		avatar.party_list.push_back(p->id);
 		string info = "[";
 		info += players[p->id].my_name;
-		info += "] is your party";
+		info += "] in your party";
 		CreateNoticeMessage(info, CHATTYPE_TELL);
 		break;
 	}
@@ -705,9 +718,9 @@ void client_main()
 	avatar.draw_ui();
 	for (auto& pl : players) pl.draw();
 	for (auto& party : avatar.party_list) {
-		players[party].draw_hp();
+		players[party].draw_hp(true);
 	}
-	for (auto& pl : npcs) pl.draw_hp(); 
+	for (auto& pl : npcs) pl.draw_hp(false); 
 
 	for (int i = 0; i < 8; ++i)
 		PlayerSkill[i].idraw();

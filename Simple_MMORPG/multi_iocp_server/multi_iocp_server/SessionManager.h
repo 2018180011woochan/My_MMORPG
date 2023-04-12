@@ -44,7 +44,7 @@ public:
 public:	
 	array<Session, MAX_USER + NUM_NPC> clients;
 	array<BLOCK, NUM_BLOCK> blocks;
-
+	vector<int> ConnectedPlayer;
 	//////////////// DB //////////////
 	SQLHENV henv;
 	SQLHDBC hdbc;

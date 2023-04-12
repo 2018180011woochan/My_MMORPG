@@ -25,17 +25,20 @@ void Session::send_login_ok_packet(int c_id)
 	///////////////DB에 있다면 DB에서 꺼내올 것들 //////////////////
 	p.id = GSessionManager.clients[c_id]._obj_stat._id;
 
-	p.x = _obj_stat.x;
-	p.y = _obj_stat.y;
-	p.level = _obj_stat.level;
-	p.exp = _obj_stat.exp;
-	p.hpmax = _obj_stat.hpmax;
-	p.hp = _obj_stat.hp;
-	p.race = RACE::RACE_PLAYER;
+	{
+		/*p.x = _obj_stat.x;
+		p.y = _obj_stat.y;*/
+		p.x = 0;
+		p.y = 0;
+		p.level = _obj_stat.level;
+		p.exp = _obj_stat.exp;
+		p.hpmax = _obj_stat.hpmax;
+		p.hp = _obj_stat.hp;
+		p.race = RACE::RACE_PLAYER;
+	}
 
-
-	/*if (isStressTest) {
-		p.x = rand() % W_WIDTH;
+	//if (isStressTest) {
+		/*p.x = rand() % W_WIDTH;
 		p.y = rand() % W_HEIGHT;
 
 		p.level = 1;
@@ -45,11 +48,12 @@ void Session::send_login_ok_packet(int c_id)
 		p.race = RACE::RACE_PLAYER;
 
 		GSessionManager.clients[p.id]._obj_stat.x = p.x;
-		GSessionManager.clients[p.id]._obj_stat.y = p.y;
-	}*/
+		GSessionManager.clients[p.id]._obj_stat.y = p.y;*/
+	//}
 
 	////////////////////////////////////////////////////////////////
-
+	GSessionManager.clients[p.id]._obj_stat.x = p.x;
+	GSessionManager.clients[p.id]._obj_stat.y = p.y;
 	GSessionManager.SetSector(RACE_PLAYER, p.id);
 	do_send(&p);
 }

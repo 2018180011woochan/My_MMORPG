@@ -255,11 +255,11 @@ void SessionManager::SetSector(int _race, int _id)
 void SessionManager::Move_NPC(int _npc_id, int _c_id)
 {
 	unordered_set<int> old_vl;
-	for (int i = 0; i < MAX_USER; ++i) {
-		if (clients[i]._obj_stat.sector != clients[_npc_id]._obj_stat.sector) continue;
-		if (clients[i]._s_state != ST_INGAME) continue;
-		if (distance(_npc_id, i) <= RANGE) old_vl.insert(i);
 
+	for (auto& pl : ConnectedPlayer) {
+		if (clients[pl]._obj_stat.sector != clients[_npc_id]._obj_stat.sector) continue;
+		if (clients[pl]._s_state != ST_INGAME) continue;
+		if (distance(_npc_id, pl) <= RANGE) old_vl.insert(pl);
 	}
 
 	if (clients[_npc_id]._attacktype == ATTACKTYPE_PEACE)
@@ -268,13 +268,19 @@ void SessionManager::Move_NPC(int _npc_id, int _c_id)
 		PathFinder_Agro(_npc_id, _c_id);
 
 	unordered_set<int> new_vl;
-	for (int i = 0; i < MAX_USER; ++i) {
-		if (clients[i]._s_state != ST_INGAME) continue;
-		if (distance(_npc_id, i) <= RANGE) new_vl.insert(i);
+	//for (int i = 0; i < MAX_USER; ++i) {
+	//	if (clients[i]._s_state != ST_INGAME) continue;
+	//	if (distance(_npc_id, i) <= RANGE) new_vl.insert(i);
+	//}
+
+	for (auto& pl : ConnectedPlayer) {
+		if (clients[pl]._obj_stat.sector != clients[_npc_id]._obj_stat.sector) continue;
+		if (clients[pl]._s_state != ST_INGAME) continue;
+		if (distance(_npc_id, pl) <= RANGE) new_vl.insert(pl);
 	}
 
 	for (auto p_id : new_vl) {
-		//if (GSessionManager.clients[p_id]._obj_stat.race != RACE::RACE_PLAYER) continue;
+		if (GSessionManager.clients[p_id]._obj_stat.race != RACE::RACE_PLAYER) continue;
 		clients[p_id]._ViewListLock.lock();
 		if (0 == clients[p_id].view_list.count(_npc_id)) {
 			clients[p_id].view_list.insert(_npc_id);
@@ -287,7 +293,7 @@ void SessionManager::Move_NPC(int _npc_id, int _c_id)
 		}
 	}
 	for (auto p_id : old_vl) {
-		//if (GSessionManager.clients[p_id]._obj_stat.race != RACE::RACE_PLAYER) continue;
+		if (GSessionManager.clients[p_id]._obj_stat.race != RACE::RACE_PLAYER) continue;
 		if (0 == new_vl.count(p_id)) {
 			clients[p_id]._ViewListLock.lock();
 			if (clients[p_id].view_list.count(_npc_id) == 1) {
@@ -393,7 +399,7 @@ void SessionManager::Hit_NPC(int _p_id, int n_id)
 	clients[_p_id].Send_StatChange_Packet(_p_id, n_id);	// 몬스터 공격하여 체력이 변하면 플레이어에게 전송
 	for (auto& pl : clients[_p_id].view_list) {
 		if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
-		clients[pl].Send_StatChange_Packet(pl, n_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송
+		clients[pl].Send_StatChange_Packet(pl, n_id);	// 몬스터 공격하여 스탯이 변하면 근처 플레이어에게 전송
 	}
 
 	if (clients[n_id]._obj_stat.hp <= 0) {		// 몬스터 사망
@@ -405,6 +411,35 @@ void SessionManager::Hit_NPC(int _p_id, int n_id)
 
 		Combat_Reward(_p_id, n_id);
 		clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);	// 몬스터 처치하여 스탯이 변하면 플레이어에게 전송
+
+		string notice;
+		notice += clients[_p_id]._obj_stat._name;
+		notice += " kill ";
+		notice += clients[n_id]._obj_stat._name;
+		notice += " EXP ( ";
+		notice += to_string(clients[_p_id]._obj_stat.exp);
+		notice += " / ";
+		notice += to_string(clients[_p_id]._obj_stat.maxexp);
+		notice += " )";
+		char temp[BUF_SIZE];
+		strcpy_s(temp, notice.c_str());
+		clients[_p_id].Send_Notice_Packet(temp);
+
+		for (auto& party : clients[_p_id].my_party) {
+			Combat_Reward(party, n_id);
+			clients[party].Send_StatChange_Packet(party, party);
+
+			notice.clear();
+			notice += "Party Bonus";
+			notice += " EXP ( ";
+			notice += to_string(clients[party]._obj_stat.exp);
+			notice += " / ";
+			notice += to_string(clients[party]._obj_stat.maxexp);
+			notice += " )";
+			char temp[BUF_SIZE];
+			strcpy_s(temp, notice.c_str());
+			clients[party].Send_Notice_Packet(temp);
+		}
 
 		// 시야 안의 모든 플레이어들에게 REMOVE패킷 전송
 		for (auto& pl : clients[_p_id].view_list) {
@@ -434,14 +469,29 @@ void SessionManager::Hit_Player(int _n_id, int _p_id)
 		clients[_p_id]._obj_stat.hp = clients[_p_id]._obj_stat.hpmax;
 		clients[_p_id]._obj_stat.exp = clients[_p_id]._obj_stat.exp / 2;
 		//if (!isStressTest) {
-		clients[_p_id]._obj_stat.x = 0;
-		clients[_p_id]._obj_stat.y = 0;
+		//clients[_p_id]._obj_stat.x = 0;
+		//clients[_p_id]._obj_stat.y = 0;
 		//}
-		/*else {
-			GSessionManager.clients[_p_id]._obj_stat.x = rand() % W_WIDTH;
-			GSessionManager.clients[_p_id]._obj_stat.y = rand() % W_HEIGHT;
-		}*/
+		//else {
+		clients[_p_id]._obj_stat.x = rand() % W_WIDTH;
+		clients[_p_id]._obj_stat.y = rand() % W_HEIGHT;
+		SetSector(RACE_PLAYER, _p_id);
+		//{			
 
+		clients[_p_id].view_list.clear();
+
+		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
+			if (clients[i]._s_state == ST_FREE) continue;
+			if (i == _p_id) continue;
+			//if (clients[_p_id]._obj_stat.sector != clients[i]._obj_stat.sector) continue;
+			if (RANGE > distance(_p_id, i)) {
+				clients[_p_id].send_add_object(i);
+				clients[_p_id]._ViewListLock.lock();
+				clients[_p_id].view_list.insert(i);
+				clients[_p_id]._ViewListLock.unlock();
+				clients[i]._s_state = ST_INGAME;
+			}
+		}
 
 		string notice;
 		notice += clients[_p_id]._obj_stat._name;
