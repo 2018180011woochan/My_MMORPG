@@ -514,11 +514,13 @@ void SessionManager::Combat_Reward(int p_id, int n_id)
 {
 	// 몬스터 처치 보상
 	int rewardEXP = clients[n_id]._obj_stat.level * clients[n_id]._obj_stat.level * 2;
-	if (clients[n_id]._attacktype == ATTACKTYPE_AGRO)
-		clients[p_id]._obj_stat.exp += rewardEXP * 2;
-	else
-		clients[p_id]._obj_stat.exp += rewardEXP;
-
+	if (clients[n_id]._attacktype == ATTACKTYPE_AGRO) {
+		//clients[p_id]._obj_stat.exp += rewardEXP * 2;
+		rewardEXP = rewardEXP * 2;
+		if (clients[n_id]._movetype == MOVETYPE_ROAMING)
+			rewardEXP = rewardEXP * 2;
+	}
+	clients[p_id]._obj_stat.exp += rewardEXP;
 
 	if (clients[p_id]._obj_stat.exp > clients[p_id]._obj_stat.maxexp) {
 		clients[p_id]._obj_stat.level += 1;
