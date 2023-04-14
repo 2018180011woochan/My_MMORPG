@@ -28,8 +28,8 @@ void Session::send_login_ok_packet(int c_id)
 	{
 		/*p.x = _obj_stat.x;
 		p.y = _obj_stat.y;*/
-		p.x = 0;
-		p.y = 0;
+		p.x = 12;
+		p.y = 15;
 		p.level = _obj_stat.level;
 		p.exp = _obj_stat.exp;
 		p.hpmax = _obj_stat.hpmax;

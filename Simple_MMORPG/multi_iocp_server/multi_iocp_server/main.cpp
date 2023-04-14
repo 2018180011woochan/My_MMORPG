@@ -143,10 +143,10 @@ void process_packet(int c_id, char* packet)
 
 		unordered_set<int> new_vl;
 		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
-			if (GSessionManager.clients[i]._obj_stat.sector != GSessionManager.clients[c_id]._obj_stat.sector) continue;
+			if (GSessionManager.clients[i]._obj_stat.sector !=
+				GSessionManager.clients[c_id]._obj_stat.sector) continue;
+
 			if (ST_INGAME != GSessionManager.clients[i]._s_state) continue;
-			//if (ST_FREE == GSessionManager.clients[i]._s_state) continue;
-			//if (ST_SLEEP == GSessionManager.clients[i]._s_state) continue;
 			if (c_id == GSessionManager.clients[i]._obj_stat._id) continue;
 
 			if (RANGE > GSessionManager.distance(c_id, i))
@@ -280,7 +280,7 @@ void process_packet(int c_id, char* packet)
 		for (int& connected_id : GSessionManager.ConnectedPlayer)
 			GSessionManager.clients[connected_id].do_send(&chat_packet);
 
-		cout << "[" << GSessionManager.clients[c_id]._obj_stat._name << "] : " << p->mess << "\n";
+		cout << "[" << GSessionManager.clients[c_id]._obj_stat._name << "]:" << p->mess << "\n";
 		break;
 	}
 	case CS_PARTY_INVITE:
@@ -440,7 +440,8 @@ void do_ai_ver_heat_beat()
 			if (GSessionManager.clients[npc]._s_state == ST_SLEEP) continue;
 			for (auto& c_id : GSessionManager.ConnectedPlayer)
 			{
-				if (GSessionManager.clients[c_id]._obj_stat.sector != GSessionManager.clients[npc]._obj_stat.sector) continue;
+				if (GSessionManager.clients[c_id]._obj_stat.sector != 
+					GSessionManager.clients[npc]._obj_stat.sector) continue;
 
 				if (GSessionManager.distance(npc, c_id) < RANGE)
 				{

@@ -314,7 +314,7 @@ void client_initialize()
 	board->loadFromFile("Texture/Tile/Tile0.png");
 	pieces->loadFromFile("Texture/User/player.png");
 	skeleton->loadFromFile("Texture/Monster/Skeleton.png");
-	wraith->loadFromFile("Texture/Monster/wraith2.png");
+	wraith->loadFromFile("Texture/Monster/wraith4.png");
 	devil->loadFromFile("Texture/Monster/Devil2.png");
 	diablo->loadFromFile("Texture/Monster/Diablo.png");
 	AttackSource->loadFromFile("Texture/UserAttack/fire.png");
@@ -443,7 +443,8 @@ void ProcessPacket(char* ptr)
 				break;
 			case RACE_WRIATH:
 				//npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 138, 149 , *HPBar, 0, 0, 89, 10 };
-				npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 73, 73 , *HPBar, 0, 0, 89, 10 };
+				//npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 73, 73 , *HPBar, 0, 0, 89, 10 };
+				npcs[id - MAX_USER] = OBJECT{ *wraith, 0, 0, 103, 94 , *HPBar, 0, 0, 89, 10 };
 				break;
 			case RACE_DEVIL:
 				//npcs[id - MAX_USER] = OBJECT{ *devil, 0, 0, 161, 133 , *HPBar, 0, 0, 89, 10 };
@@ -644,7 +645,7 @@ void ProcessPacket(char* ptr)
 				info += avatar.my_name;
 			else
 				info += players[p->id].my_name;
-			info += "] : ";
+			info += "]:";
 			info += p->mess;
 			CreateChatMessage(info);
 		}
@@ -709,13 +710,10 @@ void client_main()
 	}
 	for (auto& bl : blocks) bl.draw_block();
 
-	chatNotice.a_move(20, 650);
-	chatNotice.a_draw();
-	chatUI.a_move(630, 730);
-	chatUI.a_draw();
+	
 
 	//avatar.draw_hp();
-	avatar.draw_ui();
+	
 	for (auto& pl : players) pl.draw();
 	for (auto& party : avatar.party_list) {
 		players[party].draw_hp(true);
@@ -751,7 +749,13 @@ void client_main()
 		}
 	}
 
-	
+	chatNotice.a_move(20, 650);
+	chatNotice.a_draw();
+
+	avatar.draw_ui();
+
+	chatUI.a_move(630, 730);
+	chatUI.a_draw();
 
 	chatmessage.setPosition(700, 900);
 
@@ -952,6 +956,10 @@ int main()
 					direction = DIRECTION::DIRECTION_DOWN;
 					break;
 				case sf::Keyboard::Y:
+					if (g_isChat) {
+						info += char(event.key.code) + 97;
+						break;
+					}
 					if (party_invite) {
 						CS_PARTY_PACKET p;
 						p.size = sizeof(CS_PARTY_PACKET);
@@ -965,6 +973,10 @@ int main()
 					party_invite = false;
 					break;
 				case sf::Keyboard::N:
+					if (g_isChat) {
+						info += char(event.key.code) + 97;
+						break;
+					}
 					if (party_invite) {
 						CS_PARTY_PACKET p;
 						p.size = sizeof(CS_PARTY_PACKET);
@@ -978,6 +990,10 @@ int main()
 					party_invite = false;
 					break;
 				case sf::Keyboard::C:
+					if (g_isChat) {
+						info += char(event.key.code) + 97;
+						break;
+					}
 					CS_PARTY_INVITE_PACKET party_p;
 					party_p.size = sizeof(CS_PARTY_INVITE_PACKET);
 					party_p.type = CS_PARTY_INVITE;

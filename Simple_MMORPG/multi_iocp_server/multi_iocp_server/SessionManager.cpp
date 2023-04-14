@@ -268,10 +268,6 @@ void SessionManager::Move_NPC(int _npc_id, int _c_id)
 		PathFinder_Agro(_npc_id, _c_id);
 
 	unordered_set<int> new_vl;
-	//for (int i = 0; i < MAX_USER; ++i) {
-	//	if (clients[i]._s_state != ST_INGAME) continue;
-	//	if (distance(_npc_id, i) <= RANGE) new_vl.insert(i);
-	//}
 
 	for (auto& pl : ConnectedPlayer) {
 		if (clients[pl]._obj_stat.sector != clients[_npc_id]._obj_stat.sector) continue;
@@ -452,6 +448,8 @@ void SessionManager::Hit_NPC(int _p_id, int n_id)
 
 void SessionManager::Hit_Player(int _n_id, int _p_id)
 {
+	if (clients[_n_id]._obj_stat.isDead) return;
+
 	int AttackPower = clients[_n_id]._obj_stat.level * 2;
 	clients[_p_id]._obj_stat.hp -= AttackPower;
 
@@ -472,24 +470,26 @@ void SessionManager::Hit_Player(int _n_id, int _p_id)
 		//clients[_p_id]._obj_stat.x = 0;
 		//clients[_p_id]._obj_stat.y = 0;
 		//}
-		//else {
+
 		clients[_p_id]._obj_stat.x = rand() % W_WIDTH;
 		clients[_p_id]._obj_stat.y = rand() % W_HEIGHT;
+		clients[_p_id]._obj_stat.x = 12;
+		clients[_p_id]._obj_stat.y = 15;
 		SetSector(RACE_PLAYER, _p_id);
-		//{			
-
+		
 		clients[_p_id].view_list.clear();
 
-		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
-			if (clients[i]._s_state == ST_FREE) continue;
-			if (i == _p_id) continue;
-			//if (clients[_p_id]._obj_stat.sector != clients[i]._obj_stat.sector) continue;
-			if (RANGE > distance(_p_id, i)) {
-				clients[_p_id].send_add_object(i);
+		for (int obj = 0; obj < MAX_USER + NUM_NPC; ++obj) {
+			if (clients[obj]._s_state == ST_FREE) continue;
+			if (clients[obj]._obj_stat.isDead == true) continue;
+			if (obj == _p_id) continue;
+			if (clients[_p_id]._obj_stat.sector != clients[obj]._obj_stat.sector) continue;
+			if (RANGE > distance(_p_id, obj)) {
+				clients[_p_id].send_add_object(obj);
 				clients[_p_id]._ViewListLock.lock();
-				clients[_p_id].view_list.insert(i);
+				clients[_p_id].view_list.insert(obj);
 				clients[_p_id]._ViewListLock.unlock();
-				clients[i]._s_state = ST_INGAME;
+				clients[obj]._s_state = ST_INGAME;
 			}
 		}
 
@@ -515,11 +515,11 @@ void SessionManager::Combat_Reward(int p_id, int n_id)
 	// 몬스터 처치 보상
 	int rewardEXP = clients[n_id]._obj_stat.level * clients[n_id]._obj_stat.level * 2;
 	if (clients[n_id]._attacktype == ATTACKTYPE_AGRO) {
-		//clients[p_id]._obj_stat.exp += rewardEXP * 2;
 		rewardEXP = rewardEXP * 2;
 		if (clients[n_id]._movetype == MOVETYPE_ROAMING)
 			rewardEXP = rewardEXP * 2;
 	}
+
 	clients[p_id]._obj_stat.exp += rewardEXP;
 
 	if (clients[p_id]._obj_stat.exp > clients[p_id]._obj_stat.maxexp) {
@@ -634,7 +634,6 @@ bool SessionManager::isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _d
 	unordered_set<int> block_vl = clients[_cid].block_view_list;
 
 	unordered_set<int> obj_vl = clients[_cid].view_list;
-
 
 	switch (_direction)
 	{
