@@ -11,7 +11,6 @@ struct OBJ_STAT
 	int		_db_id;
 	short	x, y;
 	char	_name[NAME_SIZE];
-	//RACE	race;
 	int		race;
 	short	level;
 	int		exp, maxexp;
@@ -28,3 +27,4 @@ struct BLOCK {
 
 
 #endif // !__STRUCT_H__
+

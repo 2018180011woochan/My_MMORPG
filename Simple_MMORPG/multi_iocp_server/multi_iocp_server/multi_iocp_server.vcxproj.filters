@@ -1,74 +1,58 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="소스 파일">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="Over_EXP">
+      <UniqueIdentifier>{66cd6c37-5487-435b-91f8-5f34c4903a1f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="헤더 파일">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="리소스 파일">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="헤더 파일\include">
-      <UniqueIdentifier>{a4f1242b-a81c-40bd-ad88-0998bc904d3f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\Session">
+    <Filter Include="Session">
       <UniqueIdentifier>{07a2c126-e359-4f16-ae63-9047c31e16af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="98.Header">
+      <UniqueIdentifier>{20b7ee2b-3d53-462b-be56-40ec13a1d4a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="99.Default">
+      <UniqueIdentifier>{dc3d8e91-d2fa-4f68-9a58-8bc1bec97145}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Session.cpp">
-      <Filter>소스 파일\Session</Filter>
+      <Filter>Session</Filter>
     </ClCompile>
     <ClCompile Include="SessionManager.cpp">
-      <Filter>소스 파일\Session</Filter>
+      <Filter>Session</Filter>
+    </ClCompile>
+    <ClCompile Include="OVER_EXP.cpp">
+      <Filter>Over_EXP</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="pch.cpp">
+      <Filter>99.Default</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\lauxlib.h">
-      <Filter>헤더 파일\include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lua.h">
-      <Filter>헤더 파일\include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lua.hpp">
-      <Filter>헤더 파일\include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\luaconf.h">
-      <Filter>헤더 파일\include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\lualib.h">
-      <Filter>헤더 파일\include</Filter>
-    </ClInclude>
-    <ClInclude Include="protocol.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Enum.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Session.h">
-      <Filter>소스 파일\Session</Filter>
-    </ClInclude>
-    <ClInclude Include="Struct.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Include.h">
-      <Filter>헤더 파일</Filter>
+      <Filter>Session</Filter>
     </ClInclude>
     <ClInclude Include="SessionManager.h">
-      <Filter>소스 파일\Session</Filter>
+      <Filter>Session</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\..\..\lua\lua54.lib">
-      <Filter>리소스 파일</Filter>
-    </Library>
+    <ClInclude Include="OVER_EXP.h">
+      <Filter>Over_EXP</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>99.Default</Filter>
+    </ClInclude>
+    <ClInclude Include="Enum.h">
+      <Filter>98.Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Include.h">
+      <Filter>98.Header</Filter>
+    </ClInclude>
+    <ClInclude Include="protocol.h">
+      <Filter>98.Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Struct.h">
+      <Filter>98.Header</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
