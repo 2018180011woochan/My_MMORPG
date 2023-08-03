@@ -3,65 +3,65 @@
 
 SessionManager GSessionManager;
 
-int SessionManager::get_new_client_id()
+int SessionManager::GetNewClientID()
 {
 	for (int i = 0; i < MAX_USER; ++i) {
-		clients[i]._lock.lock();
-		if (clients[i]._s_state == ST_FREE) {
-			clients[i]._s_state = ST_ACCEPTED;
-			clients[i]._lock.unlock();
+		clients[i]._Lock.lock();
+		if (clients[i]._SessionState == ST_FREE) {
+			clients[i]._SessionState = ST_ACCEPTED;
+			clients[i]._Lock.unlock();
 			return i;
 		}
-		clients[i]._lock.unlock();
+		clients[i]._Lock.unlock();
 	}
 	return -1;
 }
 
-void SessionManager::Init_npc()
+void SessionManager::InitNpc()
 {
 	for (int i = MAX_USER; i < NUM_NPC + MAX_USER; ++i)
-		clients[i]._obj_stat._id = i;
+		clients[i]._ObjStat.ID = i;
 	cout << "NPC initialize Begin.\n";
 
 	for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
 	{
 		// Skeleton
-		clients[i]._s_state = ST_SLEEP;
-		clients[i]._obj_stat.race = RACE::RACE_SKELETON;
-		clients[i]._obj_stat.level = 1;
-		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
-		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-		clients[i]._movetype = MOVETYPE::MOVETYPE_FIX;
-		clients[i]._attacktype = ATTACKTYPE::ATTACKTYPE_PEACE;
-		strcpy_s(clients[i]._obj_stat._name, "Skeleton");
+		clients[i]._SessionState = ST_SLEEP;
+		clients[i]._ObjStat.Race = RACE::RACE_SKELETON;
+		clients[i]._ObjStat.Level = 1;
+		clients[i]._ObjStat.MaxHP = clients[i]._ObjStat.Level * 100;
+		clients[i]._ObjStat.HP = clients[i]._ObjStat.MaxHP;
+		clients[i]._MoveType = MOVETYPE::MOVETYPE_FIX;
+		clients[i]._AttackType = ATTACKTYPE::ATTACKTYPE_PEACE;
+		strcpy_s(clients[i]._ObjStat.Name, "Skeleton");
 
 		SetSector(RACE_SKELETON, i);
 	}
 	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
 	{
 		// Wraith
-		clients[i]._s_state = ST_SLEEP;
-		clients[i]._obj_stat.race = RACE::RACE_WRIATH;
-		clients[i]._obj_stat.level = 2;
-		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
-		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-		clients[i]._movetype = MOVETYPE::MOVETYPE_FIX;
-		clients[i]._attacktype = ATTACKTYPE::ATTACKTYPE_AGRO;
-		strcpy_s(clients[i]._obj_stat._name, "Wriath");
+		clients[i]._SessionState = ST_SLEEP;
+		clients[i]._ObjStat.Race = RACE::RACE_WRIATH;
+		clients[i]._ObjStat.Level = 2;
+		clients[i]._ObjStat.MaxHP = clients[i]._ObjStat.Level * 100;
+		clients[i]._ObjStat.HP = clients[i]._ObjStat.MaxHP;
+		clients[i]._MoveType = MOVETYPE::MOVETYPE_FIX;
+		clients[i]._AttackType = ATTACKTYPE::ATTACKTYPE_AGRO;
+		strcpy_s(clients[i]._ObjStat.Name, "Wriath");
 
 		SetSector(RACE_WRIATH, i);
 	}
 	for (int i = MAX_USER + 100000; i < MAX_USER + NUM_NPC; ++i)
 	{
 		// Devil
-		clients[i]._s_state = ST_SLEEP;
-		clients[i]._obj_stat.race = RACE::RACE_DEVIL;
-		clients[i]._obj_stat.level = 3;
-		clients[i]._obj_stat.hpmax = clients[i]._obj_stat.level * 100;
-		clients[i]._obj_stat.hp = clients[i]._obj_stat.hpmax;
-		clients[i]._movetype = MOVETYPE::MOVETYPE_ROAMING;
-		clients[i]._attacktype = ATTACKTYPE::ATTACKTYPE_PEACE;
-		strcpy_s(clients[i]._obj_stat._name, "Devil");
+		clients[i]._SessionState = ST_SLEEP;
+		clients[i]._ObjStat.Race = RACE::RACE_DEVIL;
+		clients[i]._ObjStat.Level = 3;
+		clients[i]._ObjStat.MaxHP = clients[i]._ObjStat.Level * 100;
+		clients[i]._ObjStat.HP = clients[i]._ObjStat.MaxHP;
+		clients[i]._MoveType = MOVETYPE::MOVETYPE_ROAMING;
+		clients[i]._AttackType = ATTACKTYPE::ATTACKTYPE_PEACE;
+		strcpy_s(clients[i]._ObjStat.Name, "Devil");
 
 		SetSector(RACE_DEVIL, i);
 	}
@@ -69,18 +69,18 @@ void SessionManager::Init_npc()
 	cout << "NPC Initialization complete.\n";
 }
 
-void SessionManager::Init_Block()
+void SessionManager::InitBlock()
 {
 	for (int i = 0; i < NUM_BLOCK; ++i)
 	{
-		blocks[i].blockID = i;
+		blocks[i].BlockID = i;
 		blocks[i].x = rand() % W_WIDTH;
 		blocks[i].y = rand() % W_WIDTH;
 		SetSector(RACE_BLOCK, i);
 	}
 }
 
-void SessionManager::initialize_DB()
+void SessionManager::InitDB()
 {
 	setlocale(LC_ALL, "korean");
 
@@ -96,7 +96,7 @@ void SessionManager::initialize_DB()
 	std::cout << "DB Access OK\n";
 }
 
-bool SessionManager::isAllowAccess(int db_id, int cid)
+bool SessionManager::IsAllowAccess(int db_id, int cid)
 {
 	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
@@ -125,13 +125,13 @@ bool SessionManager::isAllowAccess(int db_id, int cid)
 			if (retcode == SQL_SUCCESS || retcode == SQL_SUCCESS_WITH_INFO)
 			{
 				////// DB에서 정보 받아오기 //////////		
-				clients[cid]._obj_stat.race = user_race;
-				clients[cid]._obj_stat.x = user_xpos;
-				clients[cid]._obj_stat.y = user_ypos;
-				clients[cid]._obj_stat.level = user_level;
-				clients[cid]._obj_stat.exp = user_exp;
-				clients[cid]._obj_stat.hp = user_hp;
-				clients[cid]._obj_stat.hpmax = user_hpmax;
+				clients[cid]._ObjStat.Race = user_race;
+				clients[cid]._ObjStat.x = user_xpos;
+				clients[cid]._ObjStat.y = user_ypos;
+				clients[cid]._ObjStat.Level = user_level;
+				clients[cid]._ObjStat.Exp = user_exp;
+				clients[cid]._ObjStat.HP = user_hp;
+				clients[cid]._ObjStat.MaxHP = user_hpmax;
 				return true;
 			}
 			else
@@ -143,18 +143,18 @@ bool SessionManager::isAllowAccess(int db_id, int cid)
 	}
 }
 
-void SessionManager::Save_UserInfo(int db_id, int c_id)
+void SessionManager::SaveUserInfo(int db_id, int c_id)
 {
 	retcode = SQLAllocHandle(SQL_HANDLE_STMT, hdbc, &hstmt);
 
-	wstring mydb_id = to_wstring(clients[c_id]._obj_stat._db_id);
-	wstring race = to_wstring(clients[c_id]._obj_stat.race);
-	wstring xpos = to_wstring(clients[c_id]._obj_stat.x);
-	wstring ypos = to_wstring(clients[c_id]._obj_stat.y);
-	wstring userlevel = to_wstring(clients[c_id]._obj_stat.level);
-	wstring exp = to_wstring(clients[c_id]._obj_stat.exp);
-	wstring hp = to_wstring(clients[c_id]._obj_stat.hp);
-	wstring hpmax = to_wstring(clients[c_id]._obj_stat.hpmax);
+	wstring mydb_id = to_wstring(clients[c_id]._ObjStat.DBID);
+	wstring race = to_wstring(clients[c_id]._ObjStat.Race);
+	wstring xpos = to_wstring(clients[c_id]._ObjStat.x);
+	wstring ypos = to_wstring(clients[c_id]._ObjStat.y);
+	wstring userlevel = to_wstring(clients[c_id]._ObjStat.Level);
+	wstring exp = to_wstring(clients[c_id]._ObjStat.Exp);
+	wstring hp = to_wstring(clients[c_id]._ObjStat.HP);
+	wstring hpmax = to_wstring(clients[c_id]._ObjStat.MaxHP);
 
 	wstring storedProcedure = L"EXEC update_userinfo ";
 	storedProcedure += mydb_id;
@@ -214,9 +214,9 @@ void SessionManager::ShowError(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE Ret
 SECTOR SessionManager::GetSector(int _race, int _id)
 {
 	if (_race == RACE_BLOCK)
-		return blocks[_id].sector;
+		return blocks[_id].Sector;
 	else
-		return clients[_id]._obj_stat.sector;
+		return clients[_id]._ObjStat.Sector;
 
 	return SECTOR_END;
 }
@@ -226,77 +226,77 @@ void SessionManager::SetSector(int _race, int _id)
 	if (_race == RACE_BLOCK) {
 		if (blocks[_id].x < Half_width) {	// 1,3 섹터
 			if (blocks[_id].y < Half_height)
-				blocks[_id].sector = SECTOR_1;
+				blocks[_id].Sector = SECTOR_1;
 			else
-				blocks[_id].sector = SECTOR_3;
+				blocks[_id].Sector = SECTOR_3;
 		}
 		else {								// 2,4 섹터
 			if (blocks[_id].y < Half_height)
-				blocks[_id].sector = SECTOR_2;
+				blocks[_id].Sector = SECTOR_2;
 			else
-				blocks[_id].sector = SECTOR_4;
+				blocks[_id].Sector = SECTOR_4;
 		}
 	}
 	else {
-		if (clients[_id]._obj_stat.x < Half_width) {	// 1,3 섹터
-			if (clients[_id]._obj_stat.y < Half_height)
-				clients[_id]._obj_stat.sector = SECTOR_1;
+		if (clients[_id]._ObjStat.x < Half_width) {	// 1,3 섹터
+			if (clients[_id]._ObjStat.y < Half_height)
+				clients[_id]._ObjStat.Sector = SECTOR_1;
 			else
-				clients[_id]._obj_stat.sector = SECTOR_3;
+				clients[_id]._ObjStat.Sector = SECTOR_3;
 		}
 		else {								// 2,4 섹터
-			if (clients[_id]._obj_stat.y < Half_height)
-				clients[_id]._obj_stat.sector = SECTOR_2;
+			if (clients[_id]._ObjStat.y < Half_height)
+				clients[_id]._ObjStat.Sector = SECTOR_2;
 			else
-				clients[_id]._obj_stat.sector = SECTOR_4;
+				clients[_id]._ObjStat.Sector = SECTOR_4;
 		}
 	}
 }
 
-void SessionManager::Move_NPC(int _npc_id, int _c_id)
+void SessionManager::MoveNPC(int _npc_id, int _c_id)
 {
 	unordered_set<int> old_vl;
 
 	for (auto& pl : ConnectedPlayer) {
-		if (clients[pl]._obj_stat.sector != clients[_npc_id]._obj_stat.sector) continue;
-		if (clients[pl]._s_state != ST_INGAME) continue;
-		if (distance(_npc_id, pl) <= RANGE) old_vl.insert(pl);
+		if (clients[pl]._ObjStat.Sector != clients[_npc_id]._ObjStat.Sector) continue;
+		if (clients[pl]._SessionState != ST_INGAME) continue;
+		if (Distance(_npc_id, pl) <= RANGE) old_vl.insert(pl);
 	}
 
-	if (clients[_npc_id]._attacktype == ATTACKTYPE_PEACE)
-		PathFinder_Peace(_npc_id, _c_id);
-	if (clients[_npc_id]._attacktype == ATTACKTYPE_AGRO)
-		PathFinder_Agro(_npc_id, _c_id);
+	if (clients[_npc_id]._AttackType == ATTACKTYPE_PEACE)
+		PathFinderPeace(_npc_id, _c_id);
+	if (clients[_npc_id]._AttackType == ATTACKTYPE_AGRO)
+		PathFinderAgro(_npc_id, _c_id);
 
 	unordered_set<int> new_vl;
 
 	for (auto& pl : ConnectedPlayer) {
-		if (clients[pl]._obj_stat.sector != clients[_npc_id]._obj_stat.sector) continue;
-		if (clients[pl]._s_state != ST_INGAME) continue;
-		if (distance(_npc_id, pl) <= RANGE) new_vl.insert(pl);
+		if (clients[pl]._ObjStat.Sector != clients[_npc_id]._ObjStat.Sector) continue;
+		if (clients[pl]._SessionState != ST_INGAME) continue;
+		if (Distance(_npc_id, pl) <= RANGE) new_vl.insert(pl);
 	}
 
 	for (auto p_id : new_vl) {
-		if (GSessionManager.clients[p_id]._obj_stat.race != RACE::RACE_PLAYER) continue;
+		if (GSessionManager.clients[p_id]._ObjStat.Race != RACE::RACE_PLAYER) continue;
 		clients[p_id]._ViewListLock.lock();
-		if (0 == clients[p_id].view_list.count(_npc_id)) {
-			clients[p_id].view_list.insert(_npc_id);
+		if (0 == clients[p_id]._ViewList.count(_npc_id)) {
+			clients[p_id]._ViewList.insert(_npc_id);
 			clients[p_id]._ViewListLock.unlock();
-			clients[p_id].send_add_object(_npc_id);
+			clients[p_id].SendAddObjectPacket(_npc_id);
 		}
 		else {
 			clients[p_id]._ViewListLock.unlock();
-			clients[p_id].send_move_packet(_npc_id, 0);
+			clients[p_id].SendMovePacket(_npc_id, 0);
 		}
 	}
 	for (auto p_id : old_vl) {
-		if (GSessionManager.clients[p_id]._obj_stat.race != RACE::RACE_PLAYER) continue;
+		if (GSessionManager.clients[p_id]._ObjStat.Race != RACE::RACE_PLAYER) continue;
 		if (0 == new_vl.count(p_id)) {
 			clients[p_id]._ViewListLock.lock();
-			if (clients[p_id].view_list.count(_npc_id) == 1) {
-				clients[p_id].view_list.erase(_npc_id);
+			if (clients[p_id]._ViewList.count(_npc_id) == 1) {
+				clients[p_id]._ViewList.erase(_npc_id);
 				clients[p_id]._ViewListLock.unlock();
-				clients[p_id].Send_Remove_Packet(_npc_id);
+				clients[p_id].SendRemovePacket(_npc_id);
 			}
 			else
 				clients[p_id]._ViewListLock.unlock();
@@ -304,36 +304,36 @@ void SessionManager::Move_NPC(int _npc_id, int _c_id)
 	}
 }
 
-void SessionManager::PathFinder_Peace(int _npc_id, int _c_id)
+void SessionManager::PathFinderPeace(int _npc_id, int _c_id)
 {
-	short x = clients[_npc_id]._obj_stat.x;
-	short y = clients[_npc_id]._obj_stat.y;
+	short x = clients[_npc_id]._ObjStat.x;
+	short y = clients[_npc_id]._ObjStat.y;
 
 	// 길찾기 알고리즘 적용해야함
 	switch (rand() % 4) {
-	case 0: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_UP) && y > 0) y--; break;
-	case 1: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_DOWN) && y < W_HEIGHT - 1) y++; break;
-	case 2: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_LEFT) && x > 0) x--; break;
-	case 3: if (isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_RIGHT) && x < W_WIDTH - 1) x++; break;
+	case 0: if (IsPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_UP) && y > 0) y--; break;
+	case 1: if (IsPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_DOWN) && y < W_HEIGHT - 1) y++; break;
+	case 2: if (IsPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_LEFT) && x > 0) x--; break;
+	case 3: if (IsPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_RIGHT) && x < W_WIDTH - 1) x++; break;
 	}
 
-	clients[_npc_id]._obj_stat.x = x;
-	clients[_npc_id]._obj_stat.y = y;
+	clients[_npc_id]._ObjStat.x = x;
+	clients[_npc_id]._ObjStat.y = y;
 }
 
-void SessionManager::PathFinder_Agro(int _npc_id, int _c_id)
+void SessionManager::PathFinderAgro(int _npc_id, int _c_id)
 {
-	short x = clients[_npc_id]._obj_stat.x;
-	short y = clients[_npc_id]._obj_stat.y;
+	short x = clients[_npc_id]._ObjStat.x;
+	short y = clients[_npc_id]._ObjStat.y;
 
-	short target_x = clients[_c_id]._obj_stat.x;
-	short target_y = clients[_c_id]._obj_stat.y;
+	short target_x = clients[_c_id]._ObjStat.x;
+	short target_y = clients[_c_id]._ObjStat.y;
 
 	int direction = 4;
 
-	if (distance(_npc_id, _c_id) < 2) {
+	if (Distance(_npc_id, _c_id) < 2) {
 		// 몬스터가 플레이어를 공격한다
-		Hit_Player(_npc_id, _c_id);
+		HitPlayer(_npc_id, _c_id);
 		return;
 	}
 
@@ -353,28 +353,28 @@ void SessionManager::PathFinder_Agro(int _npc_id, int _c_id)
 	// 길찾기 알고리즘 적용해야함
 	switch (direction) {
 	case 0:
-		if (!isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_UP)) {
+		if (!IsPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_UP)) {
 			if (x > target_x) x--;
 			else x++;
 		}
 		else if (y > 0) y--;
 		break;
 	case 1:
-		if (!isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_DOWN)) {
+		if (!IsPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_DOWN)) {
 			if (x > target_x) x--;
 			else x++;
 		}
 		else if (y < W_HEIGHT - 1) y++;
 		break;
 	case 2:
-		if (!isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_LEFT)) {
+		if (!IsPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_LEFT)) {
 			if (y > target_y) y--;
 			else y++;
 		}
 		else if (x > 0) x--;
 		break;
 	case 3:
-		if (!isPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_RIGHT)) {
+		if (!IsPeaceMonsterMovePossible(_c_id, _npc_id, DIRECTION_RIGHT)) {
 			if (y > target_y) y--;
 			else y++;
 		}
@@ -382,184 +382,184 @@ void SessionManager::PathFinder_Agro(int _npc_id, int _c_id)
 		break;
 	}
 
-	clients[_npc_id]._obj_stat.x = x;
-	clients[_npc_id]._obj_stat.y = y;
+	clients[_npc_id]._ObjStat.x = x;
+	clients[_npc_id]._ObjStat.y = y;
 }
 
-void SessionManager::Hit_NPC(int _p_id, int n_id)
+void SessionManager::HitNPC(int _p_id, int n_id)
 {
-	clients[n_id]._obj_stat.hp -= clients[_p_id]._obj_stat.level * 50;
+	clients[n_id]._ObjStat.HP -= clients[_p_id]._ObjStat.Level * 50;
 
 	char temp[BUF_SIZE];
-	strcpy_s(temp, Notice_Attack(_p_id, n_id).c_str());
-	clients[_p_id].Send_Notice_Packet(temp);
-	clients[_p_id].Send_StatChange_Packet(_p_id, n_id);	// 몬스터 공격하여 체력이 변하면 플레이어에게 전송
-	for (auto& pl : clients[_p_id].view_list) {
-		if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
-		clients[pl].Send_StatChange_Packet(pl, n_id);	// 몬스터 공격하여 스탯이 변하면 근처 플레이어에게 전송
+	strcpy_s(temp, NoticeAttack(_p_id, n_id).c_str());
+	clients[_p_id].SendNoticePacket(temp);
+	clients[_p_id].SendStatChangePacket(_p_id, n_id);	// 몬스터 공격하여 체력이 변하면 플레이어에게 전송
+	for (auto& pl : clients[_p_id]._ViewList) {
+		if (clients[pl]._ObjStat.Race != RACE_PLAYER) continue;
+		clients[pl].SendStatChangePacket(pl, n_id);	// 몬스터 공격하여 스탯이 변하면 근처 플레이어에게 전송
 	}
 
-	if (clients[n_id]._obj_stat.hp <= 0) {		// 몬스터 사망
-		Save_UserInfo(clients[_p_id]._obj_stat._db_id, _p_id);
+	if (clients[n_id]._ObjStat.HP <= 0) {		// 몬스터 사망
+		SaveUserInfo(clients[_p_id]._ObjStat.DBID, _p_id);
 
-		clients[n_id]._s_state = ST_SLEEP;
-		clients[n_id]._obj_stat.isDead = true;
-		clients[_p_id].Send_Remove_Packet(n_id);	// 공격을 한 플레이어에게 전송
+		clients[n_id]._SessionState = ST_SLEEP;
+		clients[n_id]._ObjStat.IsDead = true;
+		clients[_p_id].SendRemovePacket(n_id);	// 공격을 한 플레이어에게 전송
 
-		Combat_Reward(_p_id, n_id);
-		clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);	// 몬스터 처치하여 스탯이 변하면 플레이어에게 전송
+		CombatReward(_p_id, n_id);
+		clients[_p_id].SendStatChangePacket(_p_id, _p_id);	// 몬스터 처치하여 스탯이 변하면 플레이어에게 전송
 
 		string notice;
-		notice += clients[_p_id]._obj_stat._name;
+		notice += clients[_p_id]._ObjStat.Name;
 		notice += " kill ";
-		notice += clients[n_id]._obj_stat._name;
+		notice += clients[n_id]._ObjStat.Name;
 		notice += " EXP ( ";
-		notice += to_string(clients[_p_id]._obj_stat.exp);
+		notice += to_string(clients[_p_id]._ObjStat.Exp);
 		notice += " / ";
-		notice += to_string(clients[_p_id]._obj_stat.maxexp);
+		notice += to_string(clients[_p_id]._ObjStat.MaxExp);
 		notice += " )";
 		char temp[BUF_SIZE];
 		strcpy_s(temp, notice.c_str());
-		clients[_p_id].Send_Notice_Packet(temp);
+		clients[_p_id].SendNoticePacket(temp);
 
-		for (auto& party : clients[_p_id].my_party) {
-			Combat_Reward(party, n_id);
-			clients[party].Send_StatChange_Packet(party, party);
+		for (auto& party : clients[_p_id]._MyParty) {
+			CombatReward(party, n_id);
+			clients[party].SendStatChangePacket(party, party);
 
 			notice.clear();
 			notice += "Party Bonus";
 			notice += " EXP ( ";
-			notice += to_string(clients[party]._obj_stat.exp);
+			notice += to_string(clients[party]._ObjStat.Exp);
 			notice += " / ";
-			notice += to_string(clients[party]._obj_stat.maxexp);
+			notice += to_string(clients[party]._ObjStat.MaxExp);
 			notice += " )";
 			char temp[BUF_SIZE];
 			strcpy_s(temp, notice.c_str());
-			clients[party].Send_Notice_Packet(temp);
+			clients[party].SendNoticePacket(temp);
 		}
 
 		// 시야 안의 모든 플레이어들에게 REMOVE패킷 전송
-		for (auto& pl : clients[_p_id].view_list) {
-			if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
-			clients[pl].Send_Remove_Packet(n_id);			// 근처 플레이어들에게도 전송
-			clients[pl].Send_StatChange_Packet(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송	
+		for (auto& pl : clients[_p_id]._ViewList) {
+			if (clients[pl]._ObjStat.Race != RACE_PLAYER) continue;
+			clients[pl].SendRemovePacket(n_id);			// 근처 플레이어들에게도 전송
+			clients[pl].SendStatChangePacket(pl, _p_id);	// 몬스터 처치하여 스탯이 변하면 근처 플레이어에게 전송	
 		}
 	}
 }
 
-void SessionManager::Hit_Player(int _n_id, int _p_id)
+void SessionManager::HitPlayer(int _n_id, int _p_id)
 {
-	if (clients[_n_id]._obj_stat.isDead) return;
+	if (clients[_n_id]._ObjStat.IsDead) return;
 
-	int AttackPower = clients[_n_id]._obj_stat.level * 2;
-	clients[_p_id]._obj_stat.hp -= AttackPower;
+	int AttackPower = clients[_n_id]._ObjStat.Level * 2;
+	clients[_p_id]._ObjStat.HP -= AttackPower;
 
 	char temp[BUF_SIZE];
-	strcpy_s(temp, Notice_Attack(_n_id, _p_id).c_str());
-	clients[_p_id].Send_Notice_Packet(temp);
-	clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);
-	for (auto& pl : clients[_p_id].view_list) {
-		if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
-		clients[pl].Send_StatChange_Packet(pl, _p_id);
+	strcpy_s(temp, NoticeAttack(_n_id, _p_id).c_str());
+	clients[_p_id].SendNoticePacket(temp);
+	clients[_p_id].SendStatChangePacket(_p_id, _p_id);
+	for (auto& pl : clients[_p_id]._ViewList) {
+		if (clients[pl]._ObjStat.Race != RACE_PLAYER) continue;
+		clients[pl].SendStatChangePacket(pl, _p_id);
 	}
 
 	// 플레이어 사망
-	if (clients[_p_id]._obj_stat.hp <= 0) {
-		clients[_p_id]._obj_stat.hp = clients[_p_id]._obj_stat.hpmax;
-		clients[_p_id]._obj_stat.exp = clients[_p_id]._obj_stat.exp / 2;
+	if (clients[_p_id]._ObjStat.HP <= 0) {
+		clients[_p_id]._ObjStat.HP = clients[_p_id]._ObjStat.MaxHP;
+		clients[_p_id]._ObjStat.Exp = clients[_p_id]._ObjStat.Exp / 2;
 		//if (!isStressTest) {
 		//clients[_p_id]._obj_stat.x = 0;
 		//clients[_p_id]._obj_stat.y = 0;
 		//}
 
-		clients[_p_id]._obj_stat.x = rand() % W_WIDTH;
-		clients[_p_id]._obj_stat.y = rand() % W_HEIGHT;
-		clients[_p_id]._obj_stat.x = 12;
-		clients[_p_id]._obj_stat.y = 15;
+		clients[_p_id]._ObjStat.x = rand() % W_WIDTH;
+		clients[_p_id]._ObjStat.y = rand() % W_HEIGHT;
+		clients[_p_id]._ObjStat.x = 12;
+		clients[_p_id]._ObjStat.y = 15;
 		SetSector(RACE_PLAYER, _p_id);
 		
-		clients[_p_id].view_list.clear();
+		clients[_p_id]._ViewList.clear();
 
 		for (int obj = 0; obj < MAX_USER + NUM_NPC; ++obj) {
-			if (clients[obj]._s_state == ST_FREE) continue;
-			if (clients[obj]._obj_stat.isDead == true) continue;
+			if (clients[obj]._SessionState == ST_FREE) continue;
+			if (clients[obj]._ObjStat.IsDead == true) continue;
 			if (obj == _p_id) continue;
-			if (clients[_p_id]._obj_stat.sector != clients[obj]._obj_stat.sector) continue;
-			if (RANGE > distance(_p_id, obj)) {
-				clients[_p_id].send_add_object(obj);
+			if (clients[_p_id]._ObjStat.Sector != clients[obj]._ObjStat.Sector) continue;
+			if (RANGE > Distance(_p_id, obj)) {
+				clients[_p_id].SendAddObjectPacket(obj);
 				clients[_p_id]._ViewListLock.lock();
-				clients[_p_id].view_list.insert(obj);
+				clients[_p_id]._ViewList.insert(obj);
 				clients[_p_id]._ViewListLock.unlock();
-				clients[obj]._s_state = ST_INGAME;
+				clients[obj]._SessionState = ST_INGAME;
 			}
 		}
 
 		string notice;
-		notice += clients[_p_id]._obj_stat._name;
+		notice += clients[_p_id]._ObjStat.Name;
 		notice += " Dead!";
 		strcpy_s(temp, notice.c_str());
-		clients[_p_id].Send_Notice_Packet(temp);
-		clients[_p_id].Send_StatChange_Packet(_p_id, _p_id);
-		clients[_p_id].send_move_packet(_p_id, 0);
+		clients[_p_id].SendNoticePacket(temp);
+		clients[_p_id].SendStatChangePacket(_p_id, _p_id);
+		clients[_p_id].SendMovePacket(_p_id, 0);
 
-		for (auto& pl : clients[_p_id].view_list) {
-			if (clients[pl]._obj_stat.race != RACE_PLAYER) continue;
-			clients[_p_id].Send_Notice_Packet(temp);
-			clients[pl].Send_StatChange_Packet(pl, _p_id);
-			clients[pl].send_move_packet(_p_id, 0);
+		for (auto& pl : clients[_p_id]._ViewList) {
+			if (clients[pl]._ObjStat.Race != RACE_PLAYER) continue;
+			clients[_p_id].SendNoticePacket(temp);
+			clients[pl].SendStatChangePacket(pl, _p_id);
+			clients[pl].SendMovePacket(_p_id, 0);
 		}
 	}
 }
 
-void SessionManager::Combat_Reward(int p_id, int n_id)
+void SessionManager::CombatReward(int p_id, int n_id)
 {
 	// 몬스터 처치 보상
-	int rewardEXP = clients[n_id]._obj_stat.level * clients[n_id]._obj_stat.level * 2;
-	if (clients[n_id]._attacktype == ATTACKTYPE_AGRO) {
+	int rewardEXP = clients[n_id]._ObjStat.Level * clients[n_id]._ObjStat.Level * 2;
+	if (clients[n_id]._AttackType == ATTACKTYPE_AGRO) {
 		rewardEXP = rewardEXP * 2;
-		if (clients[n_id]._movetype == MOVETYPE_ROAMING)
+		if (clients[n_id]._MoveType == MOVETYPE_ROAMING)
 			rewardEXP = rewardEXP * 2;
 	}
 
-	clients[p_id]._obj_stat.exp += rewardEXP;
+	clients[p_id]._ObjStat.Exp += rewardEXP;
 
-	if (clients[p_id]._obj_stat.exp > clients[p_id]._obj_stat.maxexp) {
-		clients[p_id]._obj_stat.level += 1;
-		clients[p_id]._obj_stat.hpmax = clients[p_id]._obj_stat.level * 100;
-		clients[p_id]._obj_stat.hp = clients[p_id]._obj_stat.hpmax;
-		clients[p_id]._obj_stat.maxexp = clients[p_id]._obj_stat.level * 100;
-		clients[p_id]._obj_stat.exp = 0;
+	if (clients[p_id]._ObjStat.Exp > clients[p_id]._ObjStat.MaxExp) {
+		clients[p_id]._ObjStat.Level += 1;
+		clients[p_id]._ObjStat.MaxHP = clients[p_id]._ObjStat.Level * 100;
+		clients[p_id]._ObjStat.HP = clients[p_id]._ObjStat.MaxHP;
+		clients[p_id]._ObjStat.MaxExp = clients[p_id]._ObjStat.Level * 100;
+		clients[p_id]._ObjStat.Exp = 0;
 
 		string notice;
-		notice += clients[p_id]._obj_stat._name;
+		notice += clients[p_id]._ObjStat.Name;
 		notice += " Level UP! to ";
-		notice += to_string(clients[p_id]._obj_stat.level);
+		notice += to_string(clients[p_id]._ObjStat.Level);
 		char temp[BUF_SIZE];
 		strcpy_s(temp, notice.c_str());
-		clients[p_id].Send_Notice_Packet(temp);
+		clients[p_id].SendNoticePacket(temp);
 	}
 }
 
-int SessionManager::distance_block(int a, int b)
+int SessionManager::DistanceBlock(int a, int b)
 {
-	return abs(clients[a]._obj_stat.x - blocks[b].x)
-		+ abs(clients[a]._obj_stat.y - blocks[b].y);
+	return abs(clients[a]._ObjStat.x - blocks[b].x)
+		+ abs(clients[a]._ObjStat.y - blocks[b].y);
 }
 
-int SessionManager::distance(int a, int b)
+int SessionManager::Distance(int a, int b)
 {
-	return abs(clients[a]._obj_stat.x - clients[b]._obj_stat.x)
-		+ abs(clients[a]._obj_stat.y - clients[b]._obj_stat.y);
+	return abs(clients[a]._ObjStat.x - clients[b]._ObjStat.x)
+		+ abs(clients[a]._ObjStat.y - clients[b]._ObjStat.y);
 }
 
-bool SessionManager::isMovePossible(int _id, DIRECTION _direction)
+bool SessionManager::IsMovePossible(int _id, DIRECTION _direction)
 {
-	unordered_set<int> block_vl = clients[_id].block_view_list;
-	unordered_set<int> obj_vl = clients[_id].view_list;
+	unordered_set<int> block_vl = clients[_id]._ViewListBlock;
+	unordered_set<int> obj_vl = clients[_id]._ViewList;
 
 
-	for (auto& obj : clients[_id].view_list) {
-		if (clients[obj]._s_state == ST_SLEEP)
+	for (auto& obj : clients[_id]._ViewList) {
+		if (clients[obj]._SessionState == ST_SLEEP)
 			obj_vl.erase(obj);
 	}
 
@@ -567,29 +567,29 @@ bool SessionManager::isMovePossible(int _id, DIRECTION _direction)
 	{
 	case DIRECTION_UP:
 		for (auto& obj : obj_vl) {
-			if (clients[_id]._obj_stat.x == clients[obj]._obj_stat.x &&
-				clients[_id]._obj_stat.y == clients[obj]._obj_stat.y + 1)
+			if (clients[_id]._ObjStat.x == clients[obj]._ObjStat.x &&
+				clients[_id]._ObjStat.y == clients[obj]._ObjStat.y + 1)
 				return false;
 		}
 		break;
 	case DIRECTION_DOWN:
 		for (auto& obj : obj_vl) {
-			if (clients[_id]._obj_stat.x == clients[obj]._obj_stat.x &&
-				clients[_id]._obj_stat.y == clients[obj]._obj_stat.y - 1)
+			if (clients[_id]._ObjStat.x == clients[obj]._ObjStat.x &&
+				clients[_id]._ObjStat.y == clients[obj]._ObjStat.y - 1)
 				return false;
 		}
 		break;
 	case DIRECTION_LEFT:
 		for (auto& obj : obj_vl) {
-			if (clients[_id]._obj_stat.x == clients[obj]._obj_stat.x + 1 &&
-				clients[_id]._obj_stat.y == clients[obj]._obj_stat.y)
+			if (clients[_id]._ObjStat.x == clients[obj]._ObjStat.x + 1 &&
+				clients[_id]._ObjStat.y == clients[obj]._ObjStat.y)
 				return false;
 		}
 		break;
 	case DIRECTION_RIGHT:
 		for (auto& obj : obj_vl) {
-			if (clients[_id]._obj_stat.x == clients[obj]._obj_stat.x - 1 &&
-				clients[_id]._obj_stat.y == clients[obj]._obj_stat.y)
+			if (clients[_id]._ObjStat.x == clients[obj]._ObjStat.x - 1 &&
+				clients[_id]._ObjStat.y == clients[obj]._ObjStat.y)
 				return false;
 		}
 		break;
@@ -599,29 +599,29 @@ bool SessionManager::isMovePossible(int _id, DIRECTION _direction)
 	{
 	case DIRECTION_UP:
 		for (auto& bl : block_vl) {
-			if (((clients[_id]._obj_stat.x == blocks[bl].x + 2) || (clients[_id]._obj_stat.x == blocks[bl].x + 1)) &&
-				clients[_id]._obj_stat.y == (blocks[bl].y + 1))
+			if (((clients[_id]._ObjStat.x == blocks[bl].x + 2) || (clients[_id]._ObjStat.x == blocks[bl].x + 1)) &&
+				clients[_id]._ObjStat.y == (blocks[bl].y + 1))
 				return false;
 		}
 		break;
 	case DIRECTION_DOWN:
 		for (auto& bl : block_vl) {
-			if (((clients[_id]._obj_stat.x == blocks[bl].x + 2) || (clients[_id]._obj_stat.x == blocks[bl].x + 1)) &&
-				clients[_id]._obj_stat.y == (blocks[bl].y - 1))
+			if (((clients[_id]._ObjStat.x == blocks[bl].x + 2) || (clients[_id]._ObjStat.x == blocks[bl].x + 1)) &&
+				clients[_id]._ObjStat.y == (blocks[bl].y - 1))
 				return false;
 		}
 		break;
 	case DIRECTION_LEFT:
 		for (auto& bl : block_vl) {
-			if ((clients[_id]._obj_stat.x == blocks[bl].x + 3) &&
-				(clients[_id]._obj_stat.y == blocks[bl].y))
+			if ((clients[_id]._ObjStat.x == blocks[bl].x + 3) &&
+				(clients[_id]._ObjStat.y == blocks[bl].y))
 				return false;
 		}
 		break;
 	case DIRECTION_RIGHT:
 		for (auto& bl : block_vl) {
-			if ((clients[_id]._obj_stat.x == blocks[bl].x) &&
-				(clients[_id]._obj_stat.y == blocks[bl].y))
+			if ((clients[_id]._ObjStat.x == blocks[bl].x) &&
+				(clients[_id]._ObjStat.y == blocks[bl].y))
 				return false;
 		}
 		break;
@@ -630,39 +630,39 @@ bool SessionManager::isMovePossible(int _id, DIRECTION _direction)
 	return true;
 }
 
-bool SessionManager::isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction)
+bool SessionManager::IsPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction)
 {
-	unordered_set<int> block_vl = clients[_cid].block_view_list;
+	unordered_set<int> block_vl = clients[_cid]._ViewListBlock;
 
-	unordered_set<int> obj_vl = clients[_cid].view_list;
+	unordered_set<int> obj_vl = clients[_cid]._ViewList;
 
 	switch (_direction)
 	{
 	case DIRECTION_UP:
 		for (auto& obj : obj_vl) {
-			if (clients[_mid]._obj_stat.x == clients[obj]._obj_stat.x &&
-				clients[_mid]._obj_stat.y == clients[obj]._obj_stat.y + 1)
+			if (clients[_mid]._ObjStat.x == clients[obj]._ObjStat.x &&
+				clients[_mid]._ObjStat.y == clients[obj]._ObjStat.y + 1)
 				return false;
 		}
 		break;
 	case DIRECTION_DOWN:
 		for (auto& obj : obj_vl) {
-			if (clients[_mid]._obj_stat.x == clients[obj]._obj_stat.x &&
-				clients[_mid]._obj_stat.y == clients[obj]._obj_stat.y - 1)
+			if (clients[_mid]._ObjStat.x == clients[obj]._ObjStat.x &&
+				clients[_mid]._ObjStat.y == clients[obj]._ObjStat.y - 1)
 				return false;
 		}
 		break;
 	case DIRECTION_LEFT:
 		for (auto& obj : obj_vl) {
-			if (clients[_mid]._obj_stat.x == clients[obj]._obj_stat.x + 1 &&
-				clients[_mid]._obj_stat.y == clients[obj]._obj_stat.y)
+			if (clients[_mid]._ObjStat.x == clients[obj]._ObjStat.x + 1 &&
+				clients[_mid]._ObjStat.y == clients[obj]._ObjStat.y)
 				return false;
 		}
 		break;
 	case DIRECTION_RIGHT:
 		for (auto& obj : obj_vl) {
-			if (clients[_mid]._obj_stat.x == clients[obj]._obj_stat.x - 1 &&
-				clients[_mid]._obj_stat.y == clients[obj]._obj_stat.y)
+			if (clients[_mid]._ObjStat.x == clients[obj]._ObjStat.x - 1 &&
+				clients[_mid]._ObjStat.y == clients[obj]._ObjStat.y)
 				return false;
 		}
 		break;
@@ -672,29 +672,29 @@ bool SessionManager::isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _d
 	{
 	case DIRECTION_UP:
 		for (auto& bl : block_vl) {
-			if (((clients[_mid]._obj_stat.x == blocks[bl].x + 2) || (clients[_mid]._obj_stat.x == blocks[bl].x + 1)) &&
-				clients[_mid]._obj_stat.y == (blocks[bl].y + 1))
+			if (((clients[_mid]._ObjStat.x == blocks[bl].x + 2) || (clients[_mid]._ObjStat.x == blocks[bl].x + 1)) &&
+				clients[_mid]._ObjStat.y == (blocks[bl].y + 1))
 				return false;
 		}
 		break;
 	case DIRECTION_DOWN:
 		for (auto& bl : block_vl) {
-			if (((clients[_mid]._obj_stat.x == blocks[bl].x + 2) || (clients[_mid]._obj_stat.x == blocks[bl].x + 1)) &&
-				clients[_mid]._obj_stat.y == (blocks[bl].y - 1))
+			if (((clients[_mid]._ObjStat.x == blocks[bl].x + 2) || (clients[_mid]._ObjStat.x == blocks[bl].x + 1)) &&
+				clients[_mid]._ObjStat.y == (blocks[bl].y - 1))
 				return false;
 		}
 		break;
 	case DIRECTION_LEFT:
 		for (auto& bl : block_vl) {
-			if ((clients[_mid]._obj_stat.x == blocks[bl].x + 3) &&
-				(clients[_mid]._obj_stat.y == blocks[bl].y))
+			if ((clients[_mid]._ObjStat.x == blocks[bl].x + 3) &&
+				(clients[_mid]._ObjStat.y == blocks[bl].y))
 				return false;
 		}
 		break;
 	case DIRECTION_RIGHT:
 		for (auto& bl : block_vl) {
-			if ((clients[_mid]._obj_stat.x == blocks[bl].x) &&
-				(clients[_mid]._obj_stat.y == blocks[bl].y))
+			if ((clients[_mid]._ObjStat.x == blocks[bl].x) &&
+				(clients[_mid]._ObjStat.y == blocks[bl].y))
 				return false;
 		}
 		break;
@@ -704,17 +704,17 @@ bool SessionManager::isPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _d
 	return true;
 }
 
-string SessionManager::Notice_Attack(int _attackID, int _targetID)
+string SessionManager::NoticeAttack(int _attackID, int _targetID)
 {
 	string notice;
-	notice += clients[_attackID]._obj_stat._name;
+	notice += clients[_attackID]._ObjStat.Name;
 	notice += " Attacks a ";
-	notice += clients[_targetID]._obj_stat._name;
+	notice += clients[_targetID]._ObjStat.Name;
 	if (_targetID < MAX_USER)
 		notice += " / Player HP to ";
 	else
 		notice += " / Monster HP to ";
-	notice += to_string(clients[_targetID]._obj_stat.hp);
+	notice += to_string(clients[_targetID]._ObjStat.HP);
 
 	return notice;
 }

@@ -7,22 +7,22 @@
 
 struct OBJ_STAT
 {
-	int		_id;
-	int		_db_id;
+	int		ID;
+	int		DBID;
 	short	x, y;
-	char	_name[NAME_SIZE];
-	int		race;
-	short	level;
-	int		exp, maxexp;
-	int		hp, hpmax;
-	SECTOR  sector;
-	bool	isDead;
+	char	Name[NAME_SIZE];
+	int		Race;
+	short	Level;
+	int		Exp, MaxExp;
+	int		HP, MaxHP;
+	SECTOR  Sector;
+	bool	IsDead;
 };
 
 struct BLOCK {
-	int     blockID;
+	int     BlockID;
 	short	x, y;
-	SECTOR  sector;
+	SECTOR  Sector;
 };
 
 
