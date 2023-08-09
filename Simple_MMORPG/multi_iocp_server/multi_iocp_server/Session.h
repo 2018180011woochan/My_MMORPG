@@ -19,7 +19,8 @@ public:
 	unordered_set <int> _ViewList;
 	unordered_set <int> _ViewListBlock;
 
-	vector<int> _MyParty;
+	//vector<int> _MyParty;
+	unordered_set <int> _MyParty;
 
 	ATTACKTYPE _AttackType;
 	MOVETYPE _MoveType;

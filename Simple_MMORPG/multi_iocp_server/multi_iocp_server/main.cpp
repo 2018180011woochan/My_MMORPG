@@ -4,15 +4,15 @@
 #include "OVER_EXP.h"
 
 // 해야댈거
-// 로그인 실패 만들기 O
-// 죽었을때 시야처리 잘 안되는거 수정 O
-// 파티 경험치 공유 O
+// 로그인 실패 만들기						O
+// 죽었을때 시야처리 잘 안되는거 수정		O
+// 파티 경험치 공유						O
 // 플레이어 5초마다 HP회복
 // 몬스터 사망후 30초후 부활
-// 무찔렀을 경우 경험치 : 레벨 * 레벨 * 2 O
-// 어그로, 로밍 2배 O
+// 무찔렀을 경우 경험치 : 레벨 * 레벨 * 2	O
+// 어그로, 로밍 2배						O
 // 공격속도 1초에 한번
-// 몬스터 잡았을때 경험치 메시지 O
+// 몬스터 잡았을때 경험치 메시지			O
 
 HANDLE GIocpHandle;
 SOCKET GSocket;
@@ -307,8 +307,10 @@ void ProcessPacket(int c_id, char* packet)
 	{
 		CS_PARTY_PACKET* p = reinterpret_cast<CS_PARTY_PACKET*>(packet);
 		if (true == p->allow) {
-			GSessionManager.clients[p->master_id]._MyParty.push_back(p->id);
-			GSessionManager.clients[p->id]._MyParty.push_back(p->master_id);
+			//GSessionManager.clients[p->master_id]._MyParty.push_back(p->id);
+			GSessionManager.clients[p->master_id]._MyParty.emplace(p->id);
+			//GSessionManager.clients[p->id]._MyParty.push_back(p->master_id);
+			GSessionManager.clients[p->id]._MyParty.emplace(p->master_id);
 
 			SC_PARTY_PACKET send_player;
 			send_player.type = SC_PARTY;

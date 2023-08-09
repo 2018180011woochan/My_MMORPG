@@ -22,7 +22,8 @@ struct OBJ_STAT
 struct BLOCK {
 	int     BlockID;
 	short	x, y;
-	SECTOR  Sector;
+	//SECTOR  Sector;
+	int		Sector;
 };
 
 

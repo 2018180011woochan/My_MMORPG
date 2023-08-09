@@ -211,7 +211,7 @@ void SessionManager::ShowError(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE Ret
 	}
 }
 
-SECTOR SessionManager::GetSector(int _race, int _id)
+int SessionManager::GetSector(int _race, int _id)
 {
 	if (_race == RACE_BLOCK)
 		return blocks[_id].Sector;
@@ -223,6 +223,23 @@ SECTOR SessionManager::GetSector(int _race, int _id)
 
 void SessionManager::SetSector(int _race, int _id)
 {
+	// 64구역?
+	//  [ 0][ 1][ 2][ 3][ 4][ 5][ 6][ 7]
+	//  [ 8][ 9][10][11][12][13][14][15]
+	//  [16][17][18][19][20][21][22][23]
+	//  [ ][ ][ ][ ][ ][ ][ ][ ]
+	//  [ ][ ][ ][ ][ ][ ][ ][ ]
+	//  [ ][ ][ ][ ][ ][ ][ ][ ]
+	//  [ ][ ][ ][ ][ ][ ][ ][ ]
+	//  [ ][ ][ ][ ][ ][ ][ ][ ]
+
+	int wSize = W_WIDTH / 8;		// 가로 8등분
+	int hSize = W_HEIGHT / 8;		// 세로 8등분
+
+	if (_race == RACE_BLOCK) {
+		//if (blocks[_id].x )
+	}
+
 	if (_race == RACE_BLOCK) {
 		if (blocks[_id].x < Half_width) {	// 1,3 섹터
 			if (blocks[_id].y < Half_height)
@@ -474,8 +491,6 @@ void SessionManager::HitPlayer(int _n_id, int _p_id)
 
 		clients[_p_id]._ObjStat.x = rand() % W_WIDTH;
 		clients[_p_id]._ObjStat.y = rand() % W_HEIGHT;
-		clients[_p_id]._ObjStat.x = 12;
-		clients[_p_id]._ObjStat.y = 15;
 		SetSector(RACE_PLAYER, _p_id);
 		
 		clients[_p_id]._ViewList.clear();

@@ -13,6 +13,9 @@
     <Filter Include="99.Default">
       <UniqueIdentifier>{dc3d8e91-d2fa-4f68-9a58-8bc1bec97145}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sector">
+      <UniqueIdentifier>{dcb3e12a-0d6a-4eab-aa0a-cf772a576e1a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Session.cpp">
@@ -27,6 +30,12 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="pch.cpp">
       <Filter>99.Default</Filter>
+    </ClCompile>
+    <ClCompile Include="Sector.cpp">
+      <Filter>Sector</Filter>
+    </ClCompile>
+    <ClCompile Include="SectorManager.cpp">
+      <Filter>Sector</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +62,12 @@
     </ClInclude>
     <ClInclude Include="Struct.h">
       <Filter>98.Header</Filter>
+    </ClInclude>
+    <ClInclude Include="Sector.h">
+      <Filter>Sector</Filter>
+    </ClInclude>
+    <ClInclude Include="SectorManager.h">
+      <Filter>Sector</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
