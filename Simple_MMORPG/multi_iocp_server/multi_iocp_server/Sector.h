@@ -3,6 +3,7 @@
 class Sector
 {
 public:
+	Sector() {}
 	Sector(int id) { _ID = id; }
 
 public:
