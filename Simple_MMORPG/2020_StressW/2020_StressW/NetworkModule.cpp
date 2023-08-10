@@ -49,6 +49,7 @@ struct CLIENT {
 	int id;
 	int x;
 	int y;
+	short sector;
 	atomic_bool connected;
 
 	SOCKET client_socket;
@@ -136,6 +137,7 @@ void ProcessPacket(int ci, unsigned char packet[])
 			if (-1 != my_id) {
 				g_clients[my_id].x = move_packet->x;
 				g_clients[my_id].y = move_packet->y;
+				g_clients[my_id].sector = move_packet->sector;
 			}
 			if (ci == my_id) {
 				if (0 != move_packet->client_time) {

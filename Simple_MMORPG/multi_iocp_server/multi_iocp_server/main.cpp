@@ -29,24 +29,24 @@ void ProcessPacket(int c_id, char* packet)
 		if (p->name[0] == '\0')
 			break;
 
-		for (int i = 0; i < MAX_USER; ++i)
-		{
-			if (GSessionManager.clients[i]._ObjStat.DBID == p->db_id)
-			{
-				if (GSessionManager.clients[i]._SessionState == ST_INGAME)
-				{
-					// loginfail보내기
-					SC_LOGIN_FAIL_PACKET login_fail_packet;
-					login_fail_packet.size = sizeof(SC_LOGIN_FAIL_PACKET);
-					login_fail_packet.type = SC_LOGIN_FAIL;
-					login_fail_packet.reason = 1;
-					GSessionManager.clients[c_id].DoSend(&login_fail_packet);
-					return;
-				}
-			}
-		}
+		//for (int i = 0; i < MAX_USER; ++i)
+		//{
+		//	if (GSessionManager.clients[i]._ObjStat.DBID == p->db_id)
+		//	{
+		//		if (GSessionManager.clients[i]._SessionState == ST_INGAME)
+		//		{
+		//			// loginfail보내기
+		//			SC_LOGIN_FAIL_PACKET login_fail_packet;
+		//			login_fail_packet.size = sizeof(SC_LOGIN_FAIL_PACKET);
+		//			login_fail_packet.type = SC_LOGIN_FAIL;
+		//			login_fail_packet.reason = 1;
+		//			GSessionManager.clients[c_id].DoSend(&login_fail_packet);
+		//			return;
+		//		}
+		//	}
+		//}
 
-		GSessionManager.IsAllowAccess(p->db_id, c_id);
+		//GSessionManager.IsAllowAccess(p->db_id, c_id);
 
 		GSessionManager.clients[c_id]._Lock.lock();
 		strcpy_s(GSessionManager.clients[c_id]._ObjStat.Name, p->name);
@@ -138,8 +138,8 @@ void ProcessPacket(int c_id, char* packet)
 		}
 		///////////////////////////////////////////
 
-		GSectorManager.PushSector(c_id);
-
+		//GSectorManager.PushSector(c_id);
+		GSessionManager.clients[c_id].SendMovePacket(c_id, 0);
 //#pragma region 섹터 나누기전
 //
 //		GSessionManager.SetSector(GSessionManager.clients[c_id]._ObjStat.Race, c_id);

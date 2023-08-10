@@ -28,10 +28,10 @@ void Session::SendLoginOkPacket(int c_id)
 	p.id = GSessionManager.clients[c_id]._ObjStat.ID;
 
 	{
-		/*p.x = _obj_stat.x;
-		p.y = _obj_stat.y;*/
-		p.x = 12;
-		p.y = 15;
+		p.x = _ObjStat.x;
+		p.y = _ObjStat.y;
+		//p.x = 12;
+		//p.y = 15;
 		p.level = _ObjStat.Level;
 		p.exp = _ObjStat.Exp;
 		p.hpmax = _ObjStat.MaxHP;
@@ -41,7 +41,7 @@ void Session::SendLoginOkPacket(int c_id)
 	}
 
 	//if (isStressTest) {
-		/*p.x = rand() % W_WIDTH;
+		p.x = rand() % W_WIDTH;
 		p.y = rand() % W_HEIGHT;
 
 		p.level = 1;
@@ -49,9 +49,10 @@ void Session::SendLoginOkPacket(int c_id)
 		p.hpmax = 100;
 		p.hp = 100;
 		p.race = RACE::RACE_PLAYER;
+		p.sector = _ObjStat.SectorID;
 
-		GSessionManager.clients[p.id]._obj_stat.x = p.x;
-		GSessionManager.clients[p.id]._obj_stat.y = p.y;*/
+		GSessionManager.clients[p.id]._ObjStat.x = p.x;
+		GSessionManager.clients[p.id]._ObjStat.y = p.y;
 	//}
 
 	////////////////////////////////////////////////////////////////

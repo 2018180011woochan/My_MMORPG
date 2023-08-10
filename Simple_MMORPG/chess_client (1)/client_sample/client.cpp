@@ -44,6 +44,8 @@ int temp_id = 99999;
 
 char Nickname[20] = "temp";
 
+bool isStressTest = true;
+
 sf::RenderWindow* g_window;
 sf::Font g_font;
 sf::Text chatmessage;
@@ -816,12 +818,12 @@ void Login()
 {
 	int db_id = 0;
 	
-	//if (!isStressTest) {
+	if (!isStressTest) {
 		cout << "ID를 입력하세요 ";
 		cin >> db_id;
 		cout << "닉네임을 입력하세요 ";
 		cin >> Nickname;
-	//}
+	}
 	
 	CS_LOGIN_PACKET p;
 	p.size = sizeof(CS_LOGIN_PACKET);

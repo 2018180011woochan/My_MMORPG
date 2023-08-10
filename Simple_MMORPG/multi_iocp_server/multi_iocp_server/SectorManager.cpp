@@ -35,41 +35,42 @@ void SectorManager::PopSector(int _id)
 
 void SectorManager::PushPlayerViewList(int _id)
 {
+	unordered_set<int> NewViewList;
 	// 해당 섹터와 상하좌우 8구역 
-	SetViewListMove(_id, GSessionManager.clients[_id]._ObjStat.SectorID);	// 해당 섹터 뷰리스트 추가
+	SetViewListMove(_id, GSessionManager.clients[_id]._ObjStat.SectorID, NewViewList);	// 해당 섹터 뷰리스트 추가
 
-	//// 좌상
-	//int secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount - 1;
-	//if (isValidSector(secID))
-	//	SetViewListMove(_id, secID);
-	//// 상
-	//secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount;
-	//if (isValidSector(secID))
-	//	SetViewListMove(_id, secID);
-	//// 우상
-	//secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount + 1;
-	//if (isValidSector(secID))
-	//	SetViewListMove(_id, secID);
-	//// 좌
-	//secID = GSessionManager.clients[_id]._ObjStat.SectorID - 1;
-	//if (isValidSector(secID))
-	//	SetViewListMove(_id, secID);
-	//// 우
-	//secID = GSessionManager.clients[_id]._ObjStat.SectorID + 1;
-	//if (isValidSector(secID))
-	//	SetViewListMove(_id, secID);
-	//// 좌하
-	//secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount - 1;
-	//if (isValidSector(secID))
-	//	SetViewListMove(_id, secID);
-	//// 하
-	//secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount;
-	//if (isValidSector(secID))
-	//	SetViewListMove(_id, secID);
-	//// 우하
-	//secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount + 1;
-	//if (isValidSector(secID))
-	//	SetViewListMove(_id, secID);
+	// 좌상
+	int secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount - 1;
+	if (isValidSector(secID))
+		SetViewListMove(_id, secID, NewViewList);
+	// 상
+	secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount;
+	if (isValidSector(secID))
+		SetViewListMove(_id, secID, NewViewList);
+	// 우상
+	secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount + 1;
+	if (isValidSector(secID))
+		SetViewListMove(_id, secID, NewViewList);
+	// 좌
+	secID = GSessionManager.clients[_id]._ObjStat.SectorID - 1;
+	if (isValidSector(secID))
+		SetViewListMove(_id, secID, NewViewList);
+	// 우
+	secID = GSessionManager.clients[_id]._ObjStat.SectorID + 1;
+	if (isValidSector(secID))
+		SetViewListMove(_id, secID, NewViewList);
+	// 좌하
+	secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount - 1;
+	if (isValidSector(secID))
+		SetViewListMove(_id, secID, NewViewList);
+	// 하
+	secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount;
+	if (isValidSector(secID))
+		SetViewListMove(_id, secID, NewViewList);
+	// 우하
+	secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount + 1;
+	if (isValidSector(secID))
+		SetViewListMove(_id, secID, NewViewList);
 
 }
 
@@ -77,7 +78,7 @@ void SectorManager::PopPlayerViewList(int _id)
 {
 }
 
-void SectorManager::SetViewListMove(int _playerID, int _sectorID)
+void SectorManager::SetViewListMove(int _playerID, int _sectorID, unordered_set<int>& _new_vl)
 {
 	unordered_set<int> sectorViewList = _Sector[_sectorID]->GetSectorPlayers();
 
@@ -85,17 +86,17 @@ void SectorManager::SetViewListMove(int _playerID, int _sectorID)
 	unordered_set<int> old_vl = GSessionManager.clients[_playerID]._ViewList;
 	GSessionManager.clients[_playerID]._ViewListLock.unlock();
 
-	unordered_set<int> new_vl;
+	//unordered_set<int> new_vl;
 	for (auto& id : sectorViewList) {
 		//if (ST_INGAME != GSessionManager.clients[i]._SessionState) continue;
 		if (_playerID == id) continue;
 
 		if (RANGE > GSessionManager.Distance(_playerID, id))
-			new_vl.insert(id);
+			_new_vl.insert(id);
 	}
 	GSessionManager.clients[_playerID].SendMovePacket(_playerID, 0);
 
-	for (auto pl : new_vl) {
+	for (auto pl : _new_vl) {
 		// old_vl에 없는데 new_vl에 있으면 add패킷 보내기
 		if (0 == old_vl.count(pl)) {
 			GSessionManager.clients[_playerID].SendAddObjectPacket(pl);
@@ -139,7 +140,7 @@ void SectorManager::SetViewListMove(int _playerID, int _sectorID)
 
 	for (auto pl : old_vl) {
 		// old에는 있는데 new에는 없으면 삭제
-		if (0 == new_vl.count(pl)) {
+		if (0 == _new_vl.count(pl)) {
 			GSessionManager.clients[_playerID].SendRemovePacket(pl);
 			GSessionManager.clients[_playerID]._ViewListLock.lock();
 			GSessionManager.clients[_playerID]._ViewList.erase(pl);

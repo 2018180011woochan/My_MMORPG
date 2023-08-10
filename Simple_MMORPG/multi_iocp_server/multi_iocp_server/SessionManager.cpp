@@ -301,6 +301,10 @@ void SessionManager::MoveNPC(int _npc_id, int _c_id)
 	for (auto p_id : new_vl) {
 		if (GSessionManager.clients[p_id]._ObjStat.Race != RACE::RACE_PLAYER) continue;
 		clients[p_id]._ViewListLock.lock();
+		if (clients[p_id]._ViewList.empty()) {
+			clients[p_id]._ViewListLock.unlock();
+			continue;
+		}
 		if (0 == clients[p_id]._ViewList.count(_npc_id)) {
 			clients[p_id]._ViewList.insert(_npc_id);
 			clients[p_id]._ViewListLock.unlock();
@@ -480,10 +484,12 @@ void SessionManager::HitPlayer(int _n_id, int _p_id)
 	strcpy_s(temp, NoticeAttack(_n_id, _p_id).c_str());
 	clients[_p_id].SendNoticePacket(temp);
 	clients[_p_id].SendStatChangePacket(_p_id, _p_id);
+	clients[_p_id]._ViewListLock.lock();
 	for (auto& pl : clients[_p_id]._ViewList) {
 		if (clients[pl]._ObjStat.Race != RACE_PLAYER) continue;
 		clients[pl].SendStatChangePacket(pl, _p_id);
 	}
+	clients[_p_id]._ViewListLock.unlock();
 
 	// 플레이어 사망
 	if (clients[_p_id]._ObjStat.HP <= 0) {
@@ -652,9 +658,10 @@ bool SessionManager::IsMovePossible(int _id, DIRECTION _direction)
 
 bool SessionManager::IsPeaceMonsterMovePossible(int _cid, int _mid, DIRECTION _direction)
 {
+	clients[_cid]._ViewListLock.lock();
 	unordered_set<int> block_vl = clients[_cid]._ViewListBlock;
-
 	unordered_set<int> obj_vl = clients[_cid]._ViewList;
+	clients[_cid]._ViewListLock.unlock();
 
 	switch (_direction)
 	{
