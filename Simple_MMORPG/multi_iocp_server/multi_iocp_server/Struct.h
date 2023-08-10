@@ -16,7 +16,7 @@ struct OBJ_STAT
 	int		Exp, MaxExp;
 	int		HP, MaxHP;
 	//SECTOR  Sector;
-	int		Sector;		//임시
+	//int		Sector;		//임시
 	int		SectorID;
 	bool	IsDead;
 };

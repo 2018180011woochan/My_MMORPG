@@ -17,9 +17,10 @@ void SectorManager::PushSector(int _id)
 
 	int SecID = (ty * SectorCount) + tx;
 
-	_Sector[SecID]->SectorAddPlayer(_id);
+	_Sector[SecID]->SectorAddObject(_id);
 	GSessionManager.clients[_id]._ObjStat.SectorID = SecID;
-	PushPlayerViewList(_id);
+	if (GSessionManager.clients[_id]._ObjStat.Race == RACE::RACE_PLAYER)
+		PushPlayerViewList(_id);
 }
 
 void SectorManager::PopSector(int _id)
@@ -28,47 +29,47 @@ void SectorManager::PopSector(int _id)
 	int ty = GSessionManager.clients[_id]._ObjStat.y / 250;		
 
 	int SecID = (ty * SectorCount) + tx;
-	_Sector[SecID]->SectorSubPlayer(_id);
+	_Sector[SecID]->SectorSubObject(_id);
 	PopPlayerViewList(_id);
 }
 
 void SectorManager::PushPlayerViewList(int _id)
 {
 	// 해당 섹터와 상하좌우 8구역 
-	SetViewList(_id, GSessionManager.clients[_id]._ObjStat.SectorID);	// 해당 섹터 뷰리스트 추가
+	SetViewListMove(_id, GSessionManager.clients[_id]._ObjStat.SectorID);	// 해당 섹터 뷰리스트 추가
 
-	// 좌상
-	int secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount - 1;
-	if (isValidSector(secID))
-		SetViewList(_id, secID);
-	// 상
-	secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount;
-	if (isValidSector(secID))
-		SetViewList(_id, secID);
-	// 우상
-	secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount + 1;
-	if (isValidSector(secID))
-		SetViewList(_id, secID);
-	// 좌
-	secID = GSessionManager.clients[_id]._ObjStat.SectorID - 1;
-	if (isValidSector(secID))
-		SetViewList(_id, secID);
-	// 우
-	secID = GSessionManager.clients[_id]._ObjStat.SectorID + 1;
-	if (isValidSector(secID))
-		SetViewList(_id, secID);
-	// 좌하
-	secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount - 1;
-	if (isValidSector(secID))
-		SetViewList(_id, secID);
-	// 하
-	secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount;
-	if (isValidSector(secID))
-		SetViewList(_id, secID);
-	// 우하
-	secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount + 1;
-	if (isValidSector(secID))
-		SetViewList(_id, secID);
+	//// 좌상
+	//int secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount - 1;
+	//if (isValidSector(secID))
+	//	SetViewListMove(_id, secID);
+	//// 상
+	//secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount;
+	//if (isValidSector(secID))
+	//	SetViewListMove(_id, secID);
+	//// 우상
+	//secID = GSessionManager.clients[_id]._ObjStat.SectorID - SectorCount + 1;
+	//if (isValidSector(secID))
+	//	SetViewListMove(_id, secID);
+	//// 좌
+	//secID = GSessionManager.clients[_id]._ObjStat.SectorID - 1;
+	//if (isValidSector(secID))
+	//	SetViewListMove(_id, secID);
+	//// 우
+	//secID = GSessionManager.clients[_id]._ObjStat.SectorID + 1;
+	//if (isValidSector(secID))
+	//	SetViewListMove(_id, secID);
+	//// 좌하
+	//secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount - 1;
+	//if (isValidSector(secID))
+	//	SetViewListMove(_id, secID);
+	//// 하
+	//secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount;
+	//if (isValidSector(secID))
+	//	SetViewListMove(_id, secID);
+	//// 우하
+	//secID = GSessionManager.clients[_id]._ObjStat.SectorID + SectorCount + 1;
+	//if (isValidSector(secID))
+	//	SetViewListMove(_id, secID);
 
 }
 
@@ -76,7 +77,7 @@ void SectorManager::PopPlayerViewList(int _id)
 {
 }
 
-void SectorManager::SetViewList(int _playerID, int _sectorID)
+void SectorManager::SetViewListMove(int _playerID, int _sectorID)
 {
 	unordered_set<int> sectorViewList = _Sector[_sectorID]->GetSectorPlayers();
 
@@ -85,16 +86,80 @@ void SectorManager::SetViewList(int _playerID, int _sectorID)
 	GSessionManager.clients[_playerID]._ViewListLock.unlock();
 
 	unordered_set<int> new_vl;
-	/*for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
-		if (GSessionManager.clients[i]._ObjStat.Sector !=
-			GSessionManager.clients[c_id]._ObjStat.Sector) continue;
+	for (auto& id : sectorViewList) {
+		//if (ST_INGAME != GSessionManager.clients[i]._SessionState) continue;
+		if (_playerID == id) continue;
 
-		if (ST_INGAME != GSessionManager.clients[i]._SessionState) continue;
-		if (c_id == GSessionManager.clients[i]._ObjStat.ID) continue;
+		if (RANGE > GSessionManager.Distance(_playerID, id))
+			new_vl.insert(id);
+	}
+	GSessionManager.clients[_playerID].SendMovePacket(_playerID, 0);
 
-		if (RANGE > GSessionManager.Distance(c_id, i))
-			new_vl.insert(i);
-	}*/
+	for (auto pl : new_vl) {
+		// old_vl에 없는데 new_vl에 있으면 add패킷 보내기
+		if (0 == old_vl.count(pl)) {
+			GSessionManager.clients[_playerID].SendAddObjectPacket(pl);
+			GSessionManager.clients[_playerID]._ViewListLock.lock();
+			GSessionManager.clients[_playerID]._ViewList.insert(pl);
+			GSessionManager.clients[_playerID]._ViewListLock.unlock();
+			GSessionManager.clients[pl]._SessionState = ST_INGAME;
+
+			if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+				continue;
+			GSessionManager.clients[pl]._ViewListLock.lock();
+			if (0 == GSessionManager.clients[pl]._ViewList.count(_playerID)) {
+				GSessionManager.clients[pl].SendAddObjectPacket(_playerID);
+				GSessionManager.clients[pl]._ViewList.insert(_playerID);
+				GSessionManager.clients[pl]._ViewListLock.unlock();
+				GSessionManager.clients[pl]._SessionState = ST_INGAME;
+			}
+			else {
+				GSessionManager.clients[pl]._ViewListLock.unlock();
+				GSessionManager.clients[pl].SendMovePacket(_playerID, 0);
+			}
+		}
+		// old_vl에도 있고 new_vl에도 있으면 move패킷 보내기
+		else {
+			if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+				continue;
+
+			GSessionManager.clients[pl]._ViewListLock.lock();
+			if (0 == GSessionManager.clients[pl]._ViewList.count(_playerID)) {
+				GSessionManager.clients[pl].SendAddObjectPacket(_playerID);
+				GSessionManager.clients[pl]._ViewList.insert(_playerID);
+				GSessionManager.clients[pl]._ViewListLock.unlock();
+				GSessionManager.clients[pl]._SessionState = ST_INGAME;
+			}
+			else {
+				GSessionManager.clients[pl]._ViewListLock.unlock();
+				GSessionManager.clients[pl].SendMovePacket(_playerID, 0);
+			}
+		}
+	}
+
+	for (auto pl : old_vl) {
+		// old에는 있는데 new에는 없으면 삭제
+		if (0 == new_vl.count(pl)) {
+			GSessionManager.clients[_playerID].SendRemovePacket(pl);
+			GSessionManager.clients[_playerID]._ViewListLock.lock();
+			GSessionManager.clients[_playerID]._ViewList.erase(pl);
+			GSessionManager.clients[_playerID]._ViewListLock.unlock();
+			GSessionManager.clients[pl]._SessionState = ST_SLEEP;
+
+			if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+				continue;
+			GSessionManager.clients[pl]._ViewListLock.lock();
+			if (0 == GSessionManager.clients[pl]._ViewList.count(_playerID)) {
+				GSessionManager.clients[pl]._ViewListLock.unlock();
+			}
+			else {
+				GSessionManager.clients[pl].SendRemovePacket(_playerID);
+				GSessionManager.clients[pl]._ViewList.erase(_playerID);
+				GSessionManager.clients[pl]._ViewListLock.unlock();
+				GSessionManager.clients[pl]._SessionState = ST_SLEEP;
+			}
+		}
+	}
 }
 
 bool SectorManager::isValidSector(int _SecID)

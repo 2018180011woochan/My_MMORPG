@@ -37,6 +37,7 @@ void Session::SendLoginOkPacket(int c_id)
 		p.hpmax = _ObjStat.MaxHP;
 		p.hp = _ObjStat.HP;
 		p.race = RACE::RACE_PLAYER;
+		p.sector = _ObjStat.SectorID;
 	}
 
 	//if (isStressTest) {
@@ -71,6 +72,7 @@ void Session::SendMovePacket(int c_id, int client_time)
 	p.hp = GSessionManager.clients[c_id]._ObjStat.HP;
 	p.hpmax = GSessionManager.clients[c_id]._ObjStat.MaxHP;
 	p.client_time = client_time;
+	p.sector = GSessionManager.clients[c_id]._ObjStat.SectorID;
 	DoSend(&p);
 }
 

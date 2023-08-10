@@ -7,13 +7,13 @@ public:
 	Sector(int id) { _ID = id; }
 
 public:
-	void SectorAddPlayer(int _playerID);
-	void SectorSubPlayer(int _playerID);
-	unordered_set<int> GetSectorPlayers() { return _Players; }
+	void SectorAddObject(int _objectID);
+	void SectorSubObject(int _objectID);
+	unordered_set<int> GetSectorPlayers() { return _Objects; }
 
 private:
 	int _ID;
-	unordered_set<int> _Players;
+	unordered_set<int> _Objects;
 	mutex _SectorLock;
 };
 

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SessionManager.h"
+#include "SectorManager.h"
 
 SessionManager GSessionManager;
 
@@ -35,7 +36,8 @@ void SessionManager::InitNpc()
 		clients[i]._AttackType = ATTACKTYPE::ATTACKTYPE_PEACE;
 		strcpy_s(clients[i]._ObjStat.Name, "Skeleton");
 
-		SetSector(RACE_SKELETON, i);
+		GSectorManager.PushSector(i);
+		//SetSector(RACE_SKELETON, i);
 	}
 	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
 	{
@@ -49,7 +51,8 @@ void SessionManager::InitNpc()
 		clients[i]._AttackType = ATTACKTYPE::ATTACKTYPE_AGRO;
 		strcpy_s(clients[i]._ObjStat.Name, "Wriath");
 
-		SetSector(RACE_WRIATH, i);
+		GSectorManager.PushSector(i);
+		//SetSector(RACE_WRIATH, i);
 	}
 	for (int i = MAX_USER + 100000; i < MAX_USER + NUM_NPC; ++i)
 	{
@@ -63,7 +66,8 @@ void SessionManager::InitNpc()
 		clients[i]._AttackType = ATTACKTYPE::ATTACKTYPE_PEACE;
 		strcpy_s(clients[i]._ObjStat.Name, "Devil");
 
-		SetSector(RACE_DEVIL, i);
+		GSectorManager.PushSector(i);
+		//SetSector(RACE_DEVIL, i);
 	}
 
 	cout << "NPC Initialization complete.\n";
@@ -216,7 +220,7 @@ int SessionManager::GetSector(int _race, int _id)
 	if (_race == RACE_BLOCK)
 		return blocks[_id].Sector;
 	else
-		return clients[_id]._ObjStat.Sector;
+		//return clients[_id]._ObjStat.Sector;
 
 	return SECTOR_END;
 }
@@ -234,41 +238,41 @@ void SessionManager::SetSector(int _race, int _id)
 	//  [56][57][58][59][60][61][62][63]
 
 
-	int wSize = W_WIDTH / 8;		// 가로 8등분
-	int hSize = W_HEIGHT / 8;		// 세로 8등분
+	//int wSize = W_WIDTH / 8;		// 가로 8등분
+	//int hSize = W_HEIGHT / 8;		// 세로 8등분
 
-	if (_race == RACE_BLOCK) {
-		//if (blocks[_id].x )
-	}
+	//if (_race == RACE_BLOCK) {
+	//	//if (blocks[_id].x )
+	//}
 
-	if (_race == RACE_BLOCK) {
-		if (blocks[_id].x < Half_width) {	// 1,3 섹터
-			if (blocks[_id].y < Half_height)
-				blocks[_id].Sector = SECTOR_1;
-			else
-				blocks[_id].Sector = SECTOR_3;
-		}
-		else {								// 2,4 섹터
-			if (blocks[_id].y < Half_height)
-				blocks[_id].Sector = SECTOR_2;
-			else
-				blocks[_id].Sector = SECTOR_4;
-		}
-	}
-	else {
-		if (clients[_id]._ObjStat.x < Half_width) {	// 1,3 섹터
-			if (clients[_id]._ObjStat.y < Half_height)
-				clients[_id]._ObjStat.Sector = SECTOR_1;
-			else
-				clients[_id]._ObjStat.Sector = SECTOR_3;
-		}
-		else {								// 2,4 섹터
-			if (clients[_id]._ObjStat.y < Half_height)
-				clients[_id]._ObjStat.Sector = SECTOR_2;
-			else
-				clients[_id]._ObjStat.Sector = SECTOR_4;
-		}
-	}
+	//if (_race == RACE_BLOCK) {
+	//	if (blocks[_id].x < Half_width) {	// 1,3 섹터
+	//		if (blocks[_id].y < Half_height)
+	//			blocks[_id].Sector = SECTOR_1;
+	//		else
+	//			blocks[_id].Sector = SECTOR_3;
+	//	}
+	//	else {								// 2,4 섹터
+	//		if (blocks[_id].y < Half_height)
+	//			blocks[_id].Sector = SECTOR_2;
+	//		else
+	//			blocks[_id].Sector = SECTOR_4;
+	//	}
+	//}
+	//else {
+	//	if (clients[_id]._ObjStat.x < Half_width) {	// 1,3 섹터
+	//		if (clients[_id]._ObjStat.y < Half_height)
+	//			clients[_id]._ObjStat.Sector = SECTOR_1;
+	//		else
+	//			clients[_id]._ObjStat.Sector = SECTOR_3;
+	//	}
+	//	else {								// 2,4 섹터
+	//		if (clients[_id]._ObjStat.y < Half_height)
+	//			clients[_id]._ObjStat.Sector = SECTOR_2;
+	//		else
+	//			clients[_id]._ObjStat.Sector = SECTOR_4;
+	//	}
+	//}
 }
 
 void SessionManager::MoveNPC(int _npc_id, int _c_id)
@@ -276,7 +280,7 @@ void SessionManager::MoveNPC(int _npc_id, int _c_id)
 	unordered_set<int> old_vl;
 
 	for (auto& pl : ConnectedPlayer) {
-		if (clients[pl]._ObjStat.Sector != clients[_npc_id]._ObjStat.Sector) continue;
+	//	//if (clients[pl]._ObjStat.Sector != clients[_npc_id]._ObjStat.Sector) continue;
 		if (clients[pl]._SessionState != ST_INGAME) continue;
 		if (Distance(_npc_id, pl) <= RANGE) old_vl.insert(pl);
 	}
@@ -289,7 +293,7 @@ void SessionManager::MoveNPC(int _npc_id, int _c_id)
 	unordered_set<int> new_vl;
 
 	for (auto& pl : ConnectedPlayer) {
-		if (clients[pl]._ObjStat.Sector != clients[_npc_id]._ObjStat.Sector) continue;
+		//if (clients[pl]._ObjStat.Sector != clients[_npc_id]._ObjStat.Sector) continue;
 		if (clients[pl]._SessionState != ST_INGAME) continue;
 		if (Distance(_npc_id, pl) <= RANGE) new_vl.insert(pl);
 	}
@@ -500,7 +504,7 @@ void SessionManager::HitPlayer(int _n_id, int _p_id)
 			if (clients[obj]._SessionState == ST_FREE) continue;
 			if (clients[obj]._ObjStat.IsDead == true) continue;
 			if (obj == _p_id) continue;
-			if (clients[_p_id]._ObjStat.Sector != clients[obj]._ObjStat.Sector) continue;
+			//if (clients[_p_id]._ObjStat.Sector != clients[obj]._ObjStat.Sector) continue;
 			if (RANGE > Distance(_p_id, obj)) {
 				clients[_p_id].SendAddObjectPacket(obj);
 				clients[_p_id]._ViewListLock.lock();

@@ -14,7 +14,7 @@ public:
 	void PopSector(int _id);
 	void PushPlayerViewList(int _id);
 	void PopPlayerViewList(int _id);
-	void SetViewList(int _playerID, int _sectorID);
+	void SetViewListMove(int _playerID, int _sectorID);
 
 private:
 	bool isValidSector(int _SecID);

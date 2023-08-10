@@ -65,6 +65,7 @@ private:
 	sf::Text m_name;
 	sf::Text m_level;
 	sf::Text ui_m_name;
+	sf::Text pos;
 	
 public:
 	int id;
@@ -72,6 +73,7 @@ public:
 	int level;
 	int exp, maxexp;
 	int hp, hpmax;
+	short sector;
 	char my_name[NAME_SIZE];
 	vector<int> party_list;
 
@@ -116,7 +118,7 @@ public:
 	OBJECT() {
 		m_showing = false;
 	}
-	void set_info(int _id, int _level, int _hp, int _hpmax, int _x, int _y)
+	void set_info(int _id, int _level, int _hp, int _hpmax, int _x, int _y, int _sector)
 	{
 		id = _id;
 		level = _level;
@@ -124,6 +126,7 @@ public:
 		hpmax = _hpmax;
 		m_x = _x;
 		m_y = _y;
+		sector = _sector;
 	}
 	void show()
 	{
@@ -160,6 +163,8 @@ public:
 
 		m_level.setPosition(rx - 40, ry - 40);
 		g_window->draw(m_level);
+
+		
 	}
 	void draw_block() {
 		if (false == m_showing) return;
@@ -210,6 +215,9 @@ public:
 
 		m_level.setPosition(rx - 40, ry - 40);
 		g_window->draw(m_level);
+
+		pos.setPosition(20, 20);
+		g_window->draw(pos);
 	}
 	void idraw()
 	{
@@ -222,6 +230,21 @@ public:
 	bool isShow()
 	{
 		return m_showing;
+	}
+
+	void set_pos(int x, int y, int sector) {
+		pos.setFont(g_font);
+		//string str = x + ", " + y;
+		//str += " : SECTOR " + sector;
+		string str;
+		str += to_string(x);
+		str += ", ";
+		str += to_string(y);
+		str += " / SECTOR : ";
+		str += to_string(sector);
+		pos.setString(str);
+		pos.setFillColor(sf::Color(255, 255, 0));
+		pos.setStyle(sf::Text::Bold);
 	}
 
 	void set_name(const char str[], bool _ui) {
@@ -388,9 +411,11 @@ void ProcessPacket(char* ptr)
 		avatar.hpmax = packet->hpmax;
 		avatar.level = packet->level;
 		avatar.exp = packet->exp;
+		avatar.sector = packet->sector;
 		strcpy_s(avatar.my_name, Nickname);
 
 		avatar.set_name(Nickname, true);
+		avatar.set_pos(avatar.m_x, avatar.m_y, avatar.sector);
 		char lev[10];
 		sprintf_s(lev, "%d", avatar.level);
 		avatar.set_level(lev);
@@ -431,7 +456,7 @@ void ProcessPacket(char* ptr)
 			char lev[10];
 			sprintf_s(lev, "%d", packet->level);
 			players[id].set_level(lev);
-			players[id].set_info(packet->id, packet->level, packet->hp, packet->hpmax, packet->x, packet->y);
+			players[id].set_info(packet->id, packet->level, packet->hp, packet->hpmax, packet->x, packet->y, packet->sector);
 			players[id].show();
 			strcpy_s(players[id].my_name, packet->name);
 		}
@@ -469,7 +494,7 @@ void ProcessPacket(char* ptr)
 			sprintf_s(lev, "%d", packet->level);
 			npcs[id - MAX_USER].set_level(lev);
 			npcs[id - MAX_USER].set_name(packet->name, false);
-			npcs[id - MAX_USER].set_info(packet->id, packet->level, packet->hp, packet->hpmax, packet->x, packet->y);
+			npcs[id - MAX_USER].set_info(packet->id, packet->level, packet->hp, packet->hpmax, packet->x, packet->y, packet->sector);
 
 			if (avatar.level < npcs[id - MAX_USER].level)
 				npcs[id - MAX_USER].set_nameColor(NameColor::COLOR_RED);
@@ -490,6 +515,8 @@ void ProcessPacket(char* ptr)
 			avatar.move(packet->x, packet->y);
 			g_left_x = packet->x - 8;
 			g_top_y = packet->y - 8;
+
+			avatar.set_pos(packet->x, packet->y, packet->sector);
 		}
 		else if (packet->id < MAX_USER) {			// 다른 유저 캐릭터 이동
 			players[packet->id].move(packet->x, packet->y);

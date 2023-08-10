@@ -91,6 +91,7 @@ struct SC_LOGIN_OK_PACKET {
 	short level;
 	int	  exp;
 	int   hp, hpmax;
+	short   sector;
 };
 
 struct SC_LOGIN_FAIL_PACKET {
@@ -112,6 +113,7 @@ struct SC_ADD_OBJECT_PACKET {
 	char	name[NAME_SIZE];
 	short	level;
 	int		hp, hpmax;
+	short   sector;
 };
 
 struct SC_REMOVE_OBJECT_PACKET {
@@ -127,6 +129,7 @@ struct SC_MOVE_OBJECT_PACKET {
 	int	id;
 	short	x, y;
 	int		hp, hpmax;
+	short	sector;
 	unsigned int client_time;
 };
 

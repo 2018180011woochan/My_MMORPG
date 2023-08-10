@@ -2,6 +2,7 @@
 #include "Include.h"
 #include "SessionManager.h"
 #include "OVER_EXP.h"
+#include "SectorManager.h"
 
 // 해야댈거
 // 로그인 실패 만들기						O
@@ -125,7 +126,7 @@ void ProcessPacket(int c_id, char* packet)
 
 		// 깨워주는 코드 부하가 엄청날듯
 		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
-			if (GSessionManager.clients[i]._ObjStat.Sector != GSessionManager.clients[c_id]._ObjStat.Sector) continue;
+			//if (GSessionManager.clients[i]._ObjStat.Sector != GSessionManager.clients[c_id]._ObjStat.Sector) continue;
 			if (c_id == GSessionManager.clients[i]._ObjStat.ID) continue;
 
 			if (RANGE > GSessionManager.Distance(c_id, i)) {
@@ -137,95 +138,101 @@ void ProcessPacket(int c_id, char* packet)
 		}
 		///////////////////////////////////////////
 
-		GSessionManager.SetSector(GSessionManager.clients[c_id]._ObjStat.Race, c_id);
+		GSectorManager.PushSector(c_id);
 
-		GSessionManager.clients[c_id]._ViewListLock.lock();
-		unordered_set<int> old_vl = GSessionManager.clients[c_id]._ViewList;
-		GSessionManager.clients[c_id]._ViewListLock.unlock();
-
-		unordered_set<int> new_vl;
-		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
-			if (GSessionManager.clients[i]._ObjStat.Sector !=
-				GSessionManager.clients[c_id]._ObjStat.Sector) continue;
-
-			if (ST_INGAME != GSessionManager.clients[i]._SessionState) continue;
-			if (c_id == GSessionManager.clients[i]._ObjStat.ID) continue;
-
-			if (RANGE > GSessionManager.Distance(c_id, i))
-				new_vl.insert(i);
-		}
-		GSessionManager.clients[c_id].SendMovePacket(c_id, 0);
-
-		for (auto pl : new_vl) {
-			// old_vl에 없는데 new_vl에 있으면 add패킷 보내기
-			if (0 == old_vl.count(pl)) {
-				GSessionManager.clients[c_id].SendAddObjectPacket(pl);
-				GSessionManager.clients[c_id]._ViewListLock.lock();
-				GSessionManager.clients[c_id]._ViewList.insert(pl);
-				GSessionManager.clients[c_id]._ViewListLock.unlock();
-				GSessionManager.clients[pl]._SessionState = ST_INGAME;
-
-				if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
-					continue;
-				GSessionManager.clients[pl]._ViewListLock.lock();
-				if (0 == GSessionManager.clients[pl]._ViewList.count(c_id)) {
-					GSessionManager.clients[pl].SendAddObjectPacket(c_id);
-					GSessionManager.clients[pl]._ViewList.insert(c_id);
-					GSessionManager.clients[pl]._ViewListLock.unlock();
-					GSessionManager.clients[pl]._SessionState = ST_INGAME;
-				}
-				else {
-					GSessionManager.clients[pl]._ViewListLock.unlock();
-					GSessionManager.clients[pl].SendMovePacket(c_id, 0);
-				}
-			}
-			// old_vl에도 있고 new_vl에도 있으면 move패킷 보내기
-			else {
-				if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
-					continue;
-
-				GSessionManager.clients[pl]._ViewListLock.lock();
-				if (0 == GSessionManager.clients[pl]._ViewList.count(c_id)) {
-					GSessionManager.clients[pl].SendAddObjectPacket(c_id);
-					GSessionManager.clients[pl]._ViewList.insert(c_id);
-					GSessionManager.clients[pl]._ViewListLock.unlock();
-					GSessionManager.clients[pl]._SessionState = ST_INGAME;
-				}
-				else {
-					GSessionManager.clients[pl]._ViewListLock.unlock();
-					GSessionManager.clients[pl].SendMovePacket(c_id, 0);
-				}
-			}
-		}
-
-		for (auto pl : old_vl) {
-			// old에는 있는데 new에는 없으면 삭제
-			if (0 == new_vl.count(pl)) {
-				GSessionManager.clients[c_id].SendRemovePacket(pl);
-				GSessionManager.clients[c_id]._ViewListLock.lock();
-				GSessionManager.clients[c_id]._ViewList.erase(pl);
-				GSessionManager.clients[c_id]._ViewListLock.unlock();
-				GSessionManager.clients[pl]._SessionState = ST_SLEEP;
-
-				if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
-					continue;
-				GSessionManager.clients[pl]._ViewListLock.lock();
-				if (0 == GSessionManager.clients[pl]._ViewList.count(c_id)) {
-					GSessionManager.clients[pl]._ViewListLock.unlock();
-				}
-				else {
-					GSessionManager.clients[pl].SendRemovePacket(c_id);
-					GSessionManager.clients[pl]._ViewList.erase(c_id);
-					GSessionManager.clients[pl]._ViewListLock.unlock();
-					GSessionManager.clients[pl]._SessionState = ST_SLEEP;
-				}
-			}
-		}
+//#pragma region 섹터 나누기전
+//
+//		GSessionManager.SetSector(GSessionManager.clients[c_id]._ObjStat.Race, c_id);
+//
+//		GSessionManager.clients[c_id]._ViewListLock.lock();
+//		unordered_set<int> old_vl = GSessionManager.clients[c_id]._ViewList;
+//		GSessionManager.clients[c_id]._ViewListLock.unlock();
+//
+//		unordered_set<int> new_vl;
+//		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
+//			if (GSessionManager.clients[i]._ObjStat.Sector !=
+//				GSessionManager.clients[c_id]._ObjStat.Sector) continue;
+//
+//			if (ST_INGAME != GSessionManager.clients[i]._SessionState) continue;
+//			if (c_id == GSessionManager.clients[i]._ObjStat.ID) continue;
+//
+//			if (RANGE > GSessionManager.Distance(c_id, i))
+//				new_vl.insert(i);
+//		}
+//		GSessionManager.clients[c_id].SendMovePacket(c_id, 0);
+//
+//		for (auto pl : new_vl) {
+//			// old_vl에 없는데 new_vl에 있으면 add패킷 보내기
+//			if (0 == old_vl.count(pl)) {
+//				GSessionManager.clients[c_id].SendAddObjectPacket(pl);
+//				GSessionManager.clients[c_id]._ViewListLock.lock();
+//				GSessionManager.clients[c_id]._ViewList.insert(pl);
+//				GSessionManager.clients[c_id]._ViewListLock.unlock();
+//				GSessionManager.clients[pl]._SessionState = ST_INGAME;
+//
+//				if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+//					continue;
+//				GSessionManager.clients[pl]._ViewListLock.lock();
+//				if (0 == GSessionManager.clients[pl]._ViewList.count(c_id)) {
+//					GSessionManager.clients[pl].SendAddObjectPacket(c_id);
+//					GSessionManager.clients[pl]._ViewList.insert(c_id);
+//					GSessionManager.clients[pl]._ViewListLock.unlock();
+//					GSessionManager.clients[pl]._SessionState = ST_INGAME;
+//				}
+//				else {
+//					GSessionManager.clients[pl]._ViewListLock.unlock();
+//					GSessionManager.clients[pl].SendMovePacket(c_id, 0);
+//				}
+//			}
+//			// old_vl에도 있고 new_vl에도 있으면 move패킷 보내기
+//			else {
+//				if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+//					continue;
+//
+//				GSessionManager.clients[pl]._ViewListLock.lock();
+//				if (0 == GSessionManager.clients[pl]._ViewList.count(c_id)) {
+//					GSessionManager.clients[pl].SendAddObjectPacket(c_id);
+//					GSessionManager.clients[pl]._ViewList.insert(c_id);
+//					GSessionManager.clients[pl]._ViewListLock.unlock();
+//					GSessionManager.clients[pl]._SessionState = ST_INGAME;
+//				}
+//				else {
+//					GSessionManager.clients[pl]._ViewListLock.unlock();
+//					GSessionManager.clients[pl].SendMovePacket(c_id, 0);
+//				}
+//			}
+//		}
+//
+//		for (auto pl : old_vl) {
+//			// old에는 있는데 new에는 없으면 삭제
+//			if (0 == new_vl.count(pl)) {
+//				GSessionManager.clients[c_id].SendRemovePacket(pl);
+//				GSessionManager.clients[c_id]._ViewListLock.lock();
+//				GSessionManager.clients[c_id]._ViewList.erase(pl);
+//				GSessionManager.clients[c_id]._ViewListLock.unlock();
+//				GSessionManager.clients[pl]._SessionState = ST_SLEEP;
+//
+//				if (GSessionManager.clients[pl]._ObjStat.Race != RACE::RACE_PLAYER)	// player가 아니라면 패킷을 보낼 필요가 없다
+//					continue;
+//				GSessionManager.clients[pl]._ViewListLock.lock();
+//				if (0 == GSessionManager.clients[pl]._ViewList.count(c_id)) {
+//					GSessionManager.clients[pl]._ViewListLock.unlock();
+//				}
+//				else {
+//					GSessionManager.clients[pl].SendRemovePacket(c_id);
+//					GSessionManager.clients[pl]._ViewList.erase(c_id);
+//					GSessionManager.clients[pl]._ViewListLock.unlock();
+//					GSessionManager.clients[pl]._SessionState = ST_SLEEP;
+//				}
+//			}
+//		}
+//
+//#pragma endregion 섹터 처리 후
 
 		// Block 시야 처리
 		// 부하가 많으면 나중에 섹터로 나눠야 함
 		for (int i = 0; i < NUM_BLOCK; ++i) {
-			if (GSessionManager.clients[c_id]._ObjStat.Sector != GSessionManager.blocks[i].Sector) continue;
+			//if (GSessionManager.clients[c_id]._ObjStat.Sector != GSessionManager.blocks[i].Sector) continue;
 			if (RANGE > GSessionManager.DistanceBlock(c_id, i)) {
 				GSessionManager.clients[c_id]._ViewListLock.lock();
 				GSessionManager.clients[c_id]._ViewListBlock.insert(i);
@@ -444,8 +451,8 @@ void DoAiHeatBeat()
 			if (GSessionManager.clients[npc]._SessionState == ST_SLEEP) continue;
 			for (auto& c_id : GSessionManager.ConnectedPlayer)
 			{
-				if (GSessionManager.clients[c_id]._ObjStat.Sector != 
-					GSessionManager.clients[npc]._ObjStat.Sector) continue;
+				//if (GSessionManager.clients[c_id]._ObjStat.Sector != 
+				//	GSessionManager.clients[npc]._ObjStat.Sector) continue;
 
 				if (GSessionManager.Distance(npc, c_id) < RANGE)
 				{
@@ -474,9 +481,11 @@ void DoAiHeatBeat()
 
 int main()
 {
+	GSectorManager.Init();
 	GSessionManager.InitBlock();
 	GSessionManager.InitNpc();
 	GSessionManager.InitDB();
+
 
 	WSADATA WSAData;
 	WSAStartup(MAKEWORD(2, 2), &WSAData);
