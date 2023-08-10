@@ -15,7 +15,9 @@ struct OBJ_STAT
 	short	Level;
 	int		Exp, MaxExp;
 	int		HP, MaxHP;
-	SECTOR  Sector;
+	//SECTOR  Sector;
+	int		Sector;		//임시
+	int		SectorID;
 	bool	IsDead;
 };
 
@@ -23,7 +25,8 @@ struct BLOCK {
 	int     BlockID;
 	short	x, y;
 	//SECTOR  Sector;
-	int		Sector;
+	int		Sector;		// 임시
+	int		SectorID;
 };
 
 
