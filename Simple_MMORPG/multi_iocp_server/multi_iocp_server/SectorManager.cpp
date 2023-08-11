@@ -12,10 +12,16 @@ void SectorManager::Init()
 
 void SectorManager::PushSector(int _id)
 {
+	int preSecID = GSessionManager.clients[_id]._ObjStat.SectorID;
+
 	int tx = GSessionManager.clients[_id]._ObjStat.x / 250;		
 	int ty = GSessionManager.clients[_id]._ObjStat.y / 250;		
 
 	int SecID = (ty * SectorCount) + tx;
+
+	if (preSecID != SecID) {
+		_Sector[preSecID]->SectorSubObject(_id);
+	}
 
 	_Sector[SecID]->SectorAddObject(_id);
 	GSessionManager.clients[_id]._ObjStat.SectorID = SecID;
@@ -76,6 +82,7 @@ void SectorManager::PushPlayerViewList(int _id)
 
 void SectorManager::PopPlayerViewList(int _id)
 {
+	
 }
 
 void SectorManager::SetViewListMove(int _playerID, int _sectorID, unordered_set<int>& _new_vl)
@@ -88,7 +95,7 @@ void SectorManager::SetViewListMove(int _playerID, int _sectorID, unordered_set<
 
 	//unordered_set<int> new_vl;
 	for (auto& id : sectorViewList) {
-		//if (ST_INGAME != GSessionManager.clients[i]._SessionState) continue;
+		//if (ST_INGAME != GSessionManager.clients[id]._SessionState) continue;
 		if (_playerID == id) continue;
 
 		if (RANGE > GSessionManager.Distance(_playerID, id))
@@ -161,6 +168,18 @@ void SectorManager::SetViewListMove(int _playerID, int _sectorID, unordered_set<
 			}
 		}
 	}
+}
+
+bool SectorManager::isInSector(int _cid, int _nid)
+{
+	int nid = GSessionManager.clients[_nid]._ObjStat.SectorID;
+	if (nid == (GSessionManager.clients[_cid]._ObjStat.SectorID || GSessionManager.clients[_cid]._ObjStat.SectorID - SectorCount - 1 ||
+		GSessionManager.clients[_cid]._ObjStat.SectorID - SectorCount || GSessionManager.clients[_cid]._ObjStat.SectorID - SectorCount + 1 ||
+		GSessionManager.clients[_cid]._ObjStat.SectorID - 1 || GSessionManager.clients[_cid]._ObjStat.SectorID + 1 ||
+		GSessionManager.clients[_cid]._ObjStat.SectorID + SectorCount - 1 || GSessionManager.clients[_cid]._ObjStat.SectorID + SectorCount ||
+		GSessionManager.clients[_cid]._ObjStat.SectorID + SectorCount + 1))
+		return true;
+	return false;
 }
 
 bool SectorManager::isValidSector(int _SecID)

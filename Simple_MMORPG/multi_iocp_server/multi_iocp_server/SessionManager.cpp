@@ -27,7 +27,7 @@ void SessionManager::InitNpc()
 	for (int i = MAX_USER; i < MAX_USER + 50000; ++i)
 	{
 		// Skeleton
-		clients[i]._SessionState = ST_SLEEP;
+		clients[i]._SessionState = ST_INGAME;
 		clients[i]._ObjStat.Race = RACE::RACE_SKELETON;
 		clients[i]._ObjStat.Level = 1;
 		clients[i]._ObjStat.MaxHP = clients[i]._ObjStat.Level * 100;
@@ -42,7 +42,7 @@ void SessionManager::InitNpc()
 	for (int i = MAX_USER + 50000; i < MAX_USER + 100000; ++i)
 	{
 		// Wraith
-		clients[i]._SessionState = ST_SLEEP;
+		clients[i]._SessionState = ST_INGAME;
 		clients[i]._ObjStat.Race = RACE::RACE_WRIATH;
 		clients[i]._ObjStat.Level = 2;
 		clients[i]._ObjStat.MaxHP = clients[i]._ObjStat.Level * 100;
@@ -57,7 +57,7 @@ void SessionManager::InitNpc()
 	for (int i = MAX_USER + 100000; i < MAX_USER + NUM_NPC; ++i)
 	{
 		// Devil
-		clients[i]._SessionState = ST_SLEEP;
+		clients[i]._SessionState = ST_INGAME;
 		clients[i]._ObjStat.Race = RACE::RACE_DEVIL;
 		clients[i]._ObjStat.Level = 3;
 		clients[i]._ObjStat.MaxHP = clients[i]._ObjStat.Level * 100;

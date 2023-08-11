@@ -15,6 +15,7 @@ public:
 	void PushPlayerViewList(int _id);
 	void PopPlayerViewList(int _id);
 	void SetViewListMove(int _playerID, int _sectorID, unordered_set<int>& _new_vl);
+	bool isInSector(int _cid, int _nid);
 
 private:
 	bool isValidSector(int _SecID);

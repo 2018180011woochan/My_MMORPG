@@ -124,10 +124,10 @@ void ProcessPacket(int c_id, char* packet)
 		GSessionManager.clients[c_id]._ObjStat.x = x;
 		GSessionManager.clients[c_id]._ObjStat.y = y;
 
-		// 깨워주는 코드 부하가 엄청날듯
 		for (int i = 0; i < MAX_USER + NUM_NPC; ++i) {
 			//if (GSessionManager.clients[i]._ObjStat.Sector != GSessionManager.clients[c_id]._ObjStat.Sector) continue;
 			if (c_id == GSessionManager.clients[i]._ObjStat.ID) continue;
+			if (!GSectorManager.isInSector(c_id, i)) continue;
 
 			if (RANGE > GSessionManager.Distance(c_id, i)) {
 				if (GSessionManager.clients[i]._ObjStat.Race == RACE_END ||
@@ -138,8 +138,9 @@ void ProcessPacket(int c_id, char* packet)
 		}
 		///////////////////////////////////////////
 
-		//GSectorManager.PushSector(c_id);
-		GSessionManager.clients[c_id].SendMovePacket(c_id, 0);
+		GSectorManager.PushSector(c_id);
+		//GSessionManager.clients[c_id].SendMovePacket(c_id, 0);
+
 //#pragma region 섹터 나누기전
 //
 //		GSessionManager.SetSector(GSessionManager.clients[c_id]._ObjStat.Race, c_id);
@@ -433,6 +434,7 @@ void Dispatch()
 		case OP_RANDOM_MOVE: {
 			// 일단 그냥 ROMING
 			int npc_id = static_cast<int>(key);
+			// 이거 땜에 테스트할때 막 퍼짐
 			GSessionManager.MoveNPC(npc_id, ex_over->_TargetID);
 			delete ex_over;
 		}

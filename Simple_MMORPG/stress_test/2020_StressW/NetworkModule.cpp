@@ -24,16 +24,14 @@ const static int MAX_CLIENTS = MAX_TEST * 2;
 const static int INVALID_ID = -1;
 const static int MAX_PACKET_SIZE = 255;
 const static int MAX_BUFF_SIZE = 255;
-//constexpr int MAX_USER = 1000;
 
 #pragma comment (lib, "ws2_32.lib")
 
-//#include "..\..\2020_IOCP_SERVER\2020_IOCP_SERVER\protocol.h"
 #include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
 
 HANDLE g_hiocp;
 
-enum OPTYPE { OP_SEND, OP_RECV, OP_DO_MOVE, OP_PLAYER_MOVE };
+enum OPTYPE { OP_SEND, OP_RECV, OP_DO_MOVE };
 
 high_resolution_clock::time_point last_connect_time;
 
@@ -49,7 +47,6 @@ struct CLIENT {
 	int id;
 	int x;
 	int y;
-	short sector;
 	atomic_bool connected;
 
 	SOCKET client_socket;
@@ -92,7 +89,7 @@ void error_display(const char* msg, int err_no)
 	std::cout << msg;
 	std::wcout << L"¿¡·¯" << lpMsgBuf << std::endl;
 
-	MessageBox(hWnd, lpMsgBuf, L"ERROR", 0);
+	// MessageBox(hWnd, lpMsgBuf, L"ERROR", 0);
 	LocalFree(lpMsgBuf);
 	// while (true);
 }
@@ -137,7 +134,6 @@ void ProcessPacket(int ci, unsigned char packet[])
 			if (-1 != my_id) {
 				g_clients[my_id].x = move_packet->x;
 				g_clients[my_id].y = move_packet->y;
-				g_clients[my_id].sector = move_packet->sector;
 			}
 			if (ci == my_id) {
 				if (0 != move_packet->client_time) {
@@ -151,7 +147,6 @@ void ProcessPacket(int ci, unsigned char packet[])
 	}
 					   break;
 	case SC_ADD_OBJECT: break;
-	
 	case SC_REMOVE_OBJECT: break;
 	case SC_LOGIN_OK:
 	{
@@ -170,11 +165,6 @@ void ProcessPacket(int ci, unsigned char packet[])
 		//SendPacket(my_id, &t_packet);
 	}
 	break;
-	case SC_LOGIN_FAIL: break;
-	case SC_CHAT: break;
-	case SC_STAT_CHANGE: break;
-	case SC_PLAYER_ATTACK: break;
-	case SC_PARTY: break;
 	default: MessageBox(hWnd, L"Unknown Packet Type", L"ERROR", 0);
 		while (true);
 	}
