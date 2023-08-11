@@ -49,6 +49,7 @@ void SessionManager::InitNpc()
 		clients[i]._ObjStat.HP = clients[i]._ObjStat.MaxHP;
 		clients[i]._MoveType = MOVETYPE::MOVETYPE_FIX;
 		clients[i]._AttackType = ATTACKTYPE::ATTACKTYPE_AGRO;
+		clients[i]._ObjStat.targetID = -1;
 		strcpy_s(clients[i]._ObjStat.Name, "Wriath");
 
 		GSectorManager.PushSector(i);
@@ -80,7 +81,6 @@ void SessionManager::InitBlock()
 		blocks[i].BlockID = i;
 		blocks[i].x = rand() % W_WIDTH;
 		blocks[i].y = rand() % W_WIDTH;
-		SetSector(RACE_BLOCK, i);
 	}
 }
 
@@ -215,66 +215,6 @@ void SessionManager::ShowError(SQLHANDLE hHandle, SQLSMALLINT hType, RETCODE Ret
 	}
 }
 
-int SessionManager::GetSector(int _race, int _id)
-{
-	if (_race == RACE_BLOCK)
-		return blocks[_id].Sector;
-	else
-		//return clients[_id]._ObjStat.Sector;
-
-	return SECTOR_END;
-}
-
-void SessionManager::SetSector(int _race, int _id)
-{
-	// 64구역?
-	//  [ 0][ 1][ 2][ 3][ 4][ 5][ 6][ 7]
-	//  [ 8][ 9][10][11][12][13][14][15]
-	//  [16][17][18][19][20][21][22][23]
-	//  [24][25][26][27][28][29][30][31]
-	//  [32][33][34][35][36][37][38][39]
-	//  [40][41][42][43][44][45][46][47]
-	//  [48][49][50][51][52][53][54][55]
-	//  [56][57][58][59][60][61][62][63]
-
-
-	//int wSize = W_WIDTH / 8;		// 가로 8등분
-	//int hSize = W_HEIGHT / 8;		// 세로 8등분
-
-	//if (_race == RACE_BLOCK) {
-	//	//if (blocks[_id].x )
-	//}
-
-	//if (_race == RACE_BLOCK) {
-	//	if (blocks[_id].x < Half_width) {	// 1,3 섹터
-	//		if (blocks[_id].y < Half_height)
-	//			blocks[_id].Sector = SECTOR_1;
-	//		else
-	//			blocks[_id].Sector = SECTOR_3;
-	//	}
-	//	else {								// 2,4 섹터
-	//		if (blocks[_id].y < Half_height)
-	//			blocks[_id].Sector = SECTOR_2;
-	//		else
-	//			blocks[_id].Sector = SECTOR_4;
-	//	}
-	//}
-	//else {
-	//	if (clients[_id]._ObjStat.x < Half_width) {	// 1,3 섹터
-	//		if (clients[_id]._ObjStat.y < Half_height)
-	//			clients[_id]._ObjStat.Sector = SECTOR_1;
-	//		else
-	//			clients[_id]._ObjStat.Sector = SECTOR_3;
-	//	}
-	//	else {								// 2,4 섹터
-	//		if (clients[_id]._ObjStat.y < Half_height)
-	//			clients[_id]._ObjStat.Sector = SECTOR_2;
-	//		else
-	//			clients[_id]._ObjStat.Sector = SECTOR_4;
-	//	}
-	//}
-}
-
 void SessionManager::MoveNPC(int _npc_id, int _c_id)
 {
 	unordered_set<int> old_vl;
@@ -352,8 +292,11 @@ void SessionManager::PathFinderAgro(int _npc_id, int _c_id)
 	short x = clients[_npc_id]._ObjStat.x;
 	short y = clients[_npc_id]._ObjStat.y;
 
-	short target_x = clients[_c_id]._ObjStat.x;
-	short target_y = clients[_c_id]._ObjStat.y;
+	if (clients[_npc_id]._ObjStat.targetID == -1) 
+		clients[_npc_id]._ObjStat.targetID = _c_id;	
+	
+	short target_x = clients[clients[_npc_id]._ObjStat.targetID]._ObjStat.x;
+	short target_y = clients[clients[_npc_id]._ObjStat.targetID]._ObjStat.y;
 
 	int direction = 4;
 
@@ -496,9 +439,11 @@ void SessionManager::HitPlayer(int _n_id, int _p_id)
 		clients[_p_id]._ObjStat.HP = clients[_p_id]._ObjStat.MaxHP;
 		clients[_p_id]._ObjStat.Exp = clients[_p_id]._ObjStat.Exp / 2;
 
-		clients[_p_id]._ObjStat.x = rand() % W_WIDTH;
-		clients[_p_id]._ObjStat.y = rand() % W_HEIGHT;
-		SetSector(RACE_PLAYER, _p_id);
+
+		clients[_p_id]._ObjStat.x = 0;
+		clients[_p_id]._ObjStat.y = 0;
+		/*clients[_p_id]._ObjStat.x = rand() % W_WIDTH;
+		clients[_p_id]._ObjStat.y = rand() % W_HEIGHT;*/
 		
 		clients[_p_id]._ViewList.clear();
 

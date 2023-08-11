@@ -58,7 +58,6 @@ void Session::SendLoginOkPacket(int c_id)
 	////////////////////////////////////////////////////////////////
 	GSessionManager.clients[p.id]._ObjStat.x = p.x;
 	GSessionManager.clients[p.id]._ObjStat.y = p.y;
-	GSessionManager.SetSector(RACE_PLAYER, p.id);
 	DoSend(&p);
 }
 

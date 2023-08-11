@@ -10,13 +10,12 @@ struct OBJ_STAT
 	int		ID;
 	int		DBID;
 	short	x, y;
+	short	targetID;
 	char	Name[NAME_SIZE];
 	int		Race;
 	short	Level;
 	int		Exp, MaxExp;
 	int		HP, MaxHP;
-	//SECTOR  Sector;
-	//int		Sector;		//임시
 	int		SectorID;
 	bool	IsDead;
 };
@@ -24,8 +23,6 @@ struct OBJ_STAT
 struct BLOCK {
 	int     BlockID;
 	short	x, y;
-	//SECTOR  Sector;
-	int		Sector;		// 임시
 	int		SectorID;
 };
 

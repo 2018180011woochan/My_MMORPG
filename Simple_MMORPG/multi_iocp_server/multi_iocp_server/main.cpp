@@ -96,7 +96,6 @@ void ProcessPacket(int c_id, char* packet)
 		}
 
 		for (auto& block : GSessionManager.blocks) {
-			if (GSessionManager.GetSector(GSessionManager.clients[c_id]._ObjStat.Race, c_id) != block.Sector) continue;
 			if (RANGE > GSessionManager.DistanceBlock(c_id, block.BlockID))
 				GSessionManager.clients[c_id].SendAddBlockPacket(block.BlockID);
 

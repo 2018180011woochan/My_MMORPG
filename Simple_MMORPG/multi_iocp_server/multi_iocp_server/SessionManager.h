@@ -31,11 +31,6 @@ public:
 	void CombatReward(int p_id, int n_id);
 
 public:
-	//SECTOR GetSector(int _race, int _id);
-	int GetSector(int _race, int _id);
-	void SetSector(int _race, int _id);
-
-public:
 	int Distance(int a, int b);
 	int DistanceBlock(int a, int b);
 	bool IsMovePossible(int _id, DIRECTION _direction);
