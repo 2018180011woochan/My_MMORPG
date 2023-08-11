@@ -27,7 +27,5 @@ constexpr int MONSTER_RANGE = 5;
 #pragma comment(lib, "MSWSock.lib")
 using namespace std;
 
-//bool isStressTest = false;
-
 #include "Include.h"
 

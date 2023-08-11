@@ -44,7 +44,7 @@ int temp_id = 99999;
 
 char Nickname[20] = "temp";
 
-bool isStressTest = true;
+bool isStressTest = false;
 
 sf::RenderWindow* g_window;
 sf::Font g_font;

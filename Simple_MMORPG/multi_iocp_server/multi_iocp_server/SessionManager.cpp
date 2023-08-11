@@ -495,10 +495,6 @@ void SessionManager::HitPlayer(int _n_id, int _p_id)
 	if (clients[_p_id]._ObjStat.HP <= 0) {
 		clients[_p_id]._ObjStat.HP = clients[_p_id]._ObjStat.MaxHP;
 		clients[_p_id]._ObjStat.Exp = clients[_p_id]._ObjStat.Exp / 2;
-		//if (!isStressTest) {
-		//clients[_p_id]._obj_stat.x = 0;
-		//clients[_p_id]._obj_stat.y = 0;
-		//}
 
 		clients[_p_id]._ObjStat.x = rand() % W_WIDTH;
 		clients[_p_id]._ObjStat.y = rand() % W_HEIGHT;
